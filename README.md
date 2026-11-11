@@ -6,6 +6,50 @@ Browser-based tools that automate fiber-to-the-home (FTTH) network design and tr
 - FTTH Design Studio: https://chiamaka-oyekwe.github.io/fiber-network-tools/ftth-design-studio/
 - Delivery Command Center (sample data): https://chiamaka-oyekwe.github.io/fiber-network-tools/delivery-command-center/
 
+New to fiber design? Start with the [Beginner's guide](#beginners-guide) below.
+
+---
+
+## Beginner's guide
+
+### The problem it solves
+To bring fiber-optic internet to a neighborhood (FTTH, "fiber to the home"), engineers first **design the network**: where every cable goes, how big each cable is, where the equipment sits, and what it all costs. Done by hand on maps, that takes days or weeks per neighborhood. **FTTH Design Studio does it automatically, in about a second.**
+
+### How it works
+1. **Upload home addresses.** Optionally add a street map, the area outline, and the main equipment location.
+2. **The tool designs the network**, connecting every home with the least cable and cost.
+3. **Review the results:** a design map, a cost estimate, and equipment lists you can download.
+
+### Key terms
+| Term | What it means |
+|---|---|
+| **OLT / central office** | The "headquarters" building where the internet signal starts |
+| **Splitter** | Splits one fiber signal so it can serve many homes, like a power strip for internet |
+| **1:8 → 1:8** | The signal splits into 8, then each of those into 8 again, so one signal serves up to 64 homes |
+| **MST (terminal)** | A small box near the homes that connects up to 8 houses |
+| **DA (distribution area)** | A zone of up to 250 homes served by the same group of splitters |
+| **F1 / F2 cable** | F1 is the main "highway" cable from the headquarters; F2 is the smaller "neighborhood street" cable |
+| **Drop** | The short cable from the street into each house |
+| **Handhole / flowerpot** | Underground boxes where cables are joined or reached |
+| **Aerial vs. underground** | Cable hung on utility poles (cheaper) or buried (more expensive, especially in rock) |
+| **MDU** | Apartment buildings, flagged and set aside because they need a different design |
+
+### What you see on screen
+- **Left panel:** your settings in numbered steps (upload data, design style, poles, costs, map display).
+- **Map:** the finished design on satellite imagery: colored lines are cables, symbols are equipment, outlined zones are areas.
+- **Tabs below the map:** *Overview* compares design options, *Design check* confirms every rule is met, *Cost* has the full price breakdown, *Network schedules* lists the equipment, *Export* downloads everything, and *Beginner's guide* repeats this guide.
+
+### Why it matters
+- **Speed:** seconds instead of days of manual drafting.
+- **Cost answers:** cost per home right away, checked against your budget (default $2,200 per home).
+- **Compares options:** tries several design styles side by side and highlights the cheapest one that meets every rule.
+- **Real-world details:** rock under the ground, permits, utility poles, and apartment buildings.
+
+### Try it
+The tool opens on a finished sample for 603 homes in Quail Creek, North Austin, Texas. Click around the map and the tabs, then upload your own addresses to design a new area.
+
+> **Good to know:** prices are sample numbers, so replace them with local quotes before bidding. This is a planning and estimating tool; final construction drawings still need an engineer's review.
+
 ---
 
 ## FTTH Design Studio
