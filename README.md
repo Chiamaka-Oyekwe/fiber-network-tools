@@ -12,6 +12,9 @@ Browser-based tools that automate fiber-to-the-home (FTTH) network design and tr
 
 Upload a list of addresses and get a complete distributed-split FTTH design in under a second: work that is usually done by hand in GIS or CAD.
 
+![Sample FTTH design on an aerial basemap: Quail Creek, North Austin, Texas](docs/images/sample-design-aerial.jpg)
+*Sample design for 603 homes in the Quail Creek neighborhood of North Austin, Texas (ZIP 78758), on Esri World Imagery: three distribution areas daisy-chained from the OLT, primary splitter sites on the main-road backbone, color-coded cable sizes, and nine MDU complexes flagged with reserved fibers.*
+
 ### Inputs
 | Layer | Required | Formats |
 |---|---|---|
@@ -50,12 +53,12 @@ A program dashboard for fiber builds from design to activation: a jeopardy list 
 ---
 
 ## Sample data
-The designer opens on a sample neighborhood so it shows a finished design right away. The same data is stored in [`data/sample-neighborhood.json`](data/sample-neighborhood.json) for reuse:
+The designer opens on a sample neighborhood, **Quail Creek in North Austin, Texas** (around Parkfield Dr and Mearns Meadow Blvd, ZIP 78758), so it shows a finished design right away. The same data is stored in [`data/sample-neighborhood.json`](data/sample-neighborhood.json) for reuse:
 - `homes`: `[address, latitude, longitude]` for 603 single-family homes
 - `mdus`: 9 multi-dwelling complexes with footprints and estimated units (excluded from the design)
 - `nodes` and `ways`: the public street network (`c` is the road class: `t` tertiary, `u` unclassified, `r` residential)
 
-Sample data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the Open Database License (ODbL).
+Sample data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), available under the Open Database License (ODbL). Aerial basemap imagery © Esri, Maxar, Earthstar Geographics.
 
 ## Running locally
 The `docs/` folder is a static site. Open `docs/index.html` in a browser, or serve the folder with any static host (GitHub Pages serves it directly).
