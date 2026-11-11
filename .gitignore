@@ -1,0 +1,9 @@
+# Working sources and notes kept off GitHub; the public site is built into docs/
+ftth-split-designer.html
+delivery-command-center.html
+build_site.py
+FTTH-Design-Studio-Overview.md
+__pycache__/
+.DS_Store
+Thumbs.db
+desktop.ini

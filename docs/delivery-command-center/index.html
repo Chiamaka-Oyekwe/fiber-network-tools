@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="End-to-end fiber build tracker with risk scoring, bottleneck analysis, contractor scorecards and grant milestones (sample data).">
+<meta property="og:description" content="End-to-end fiber build tracker with risk scoring, bottleneck analysis, contractor scorecards and grant milestones (sample data).">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230D6FA0'/%3E%3Cpath d='M8 24 L16 8 L24 24' stroke='white' stroke-width='3' fill='none'/%3E%3Ccircle cx='16' cy='8' r='3' fill='%23D9691C'/%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Fiber Delivery Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: operations wall. Summary strip, then jeopardy list (the work), then the "why" charts, then reporting. */
+:root{
+  --bg:#EEF2F4; --surface:#FFFFFF; --sheet:#F7F9FA; --ink:#13202A; --muted:#5A6B77; --line:#D6DEE3;
+  --accent:#0D6FA0; --accent-ink:#FFFFFF; --accent-soft:#DCEBF3; --feeder:#D9691C;
+  --good:#23824F; --good-soft:#DDF0E5; --warn:#A87A06; --warn-soft:#F7EDCF; --crit:#C23B2E; --crit-soft:#F7DEDA;
+  --f-display:'Archivo','Arial Narrow',system-ui,sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1317; --surface:#141E24; --sheet:#101A1F; --ink:#E2EAEE; --muted:#8EA0AB; --line:#25343D;
+  --accent:#3AA6D8; --accent-ink:#06131A; --accent-soft:#16303E; --feeder:#F28C3E;
+  --good:#46B37A; --good-soft:#15301F; --warn:#E0AE3A; --warn-soft:#352B12; --crit:#EE6A5C; --crit-soft:#3A1915;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0C1317; --surface:#141E24; --sheet:#101A1F; --ink:#E2EAEE; --muted:#8EA0AB; --line:#25343D;
+  --accent:#3AA6D8; --accent-ink:#06131A; --accent-soft:#16303E; --feeder:#F28C3E;
+  --good:#46B37A; --good-soft:#15301F; --warn:#E0AE3A; --warn-soft:#352B12; --crit:#EE6A5C; --crit-soft:#3A1915;
+  color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1440px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3vw,30px);letter-spacing:-.01em;margin:2px 0 0;text-wrap:balance}
+h2{font-family:var(--f-display);font-weight:700;font-size:16px;margin:0;letter-spacing:.005em}
+.sub{color:var(--muted);margin:4px 0 0;max-width:72ch}
+.sample{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);border-radius:4px;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.filters .f{display:flex;flex-direction:column;gap:4px}
+label.l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600}
+select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 8px;min-width:150px}
+button{font:inherit;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.note{color:var(--muted);font-size:12px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .d{font-size:12px;color:var(--muted)}
+.kpi .d b{font-weight:600}
+.up{color:var(--good)} .down{color:var(--crit)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1100px){.grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (max-width:860px){.grid2,.grid3{grid-template-columns:minmax(0,1fr)}}
+.scroll{overflow:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:12px}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:var(--sheet)}
+tbody tr.sel{background:var(--accent-soft)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-good{color:var(--good);background:var(--good-soft)} .p-warn{color:var(--warn);background:var(--warn-soft)} .p-crit{color:var(--crit);background:var(--crit-soft)} .p-done{color:var(--muted);background:var(--sheet)}
+.score{font-family:var(--f-mono);font-weight:500}
+.why{color:var(--muted);font-size:12px;margin-top:2px}
+.pname{font-weight:600}
+.mono{font-family:var(--f-mono);font-size:12px}
+.stagebar{display:flex;gap:2px;margin-top:6px}
+.stagebar i{height:4px;flex:1;border-radius:2px;background:var(--line)}
+.stagebar i.on{background:var(--accent)}
+.stagebar i.cur{background:var(--feeder)}
+.detail{display:flex;flex-direction:column;gap:14px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+.facts div{display:flex;flex-direction:column}
+.facts span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.facts b{font-weight:600;font-variant-numeric:tabular-nums}
+.factor{display:grid;grid-template-columns:150px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:12px}
+.factor .bar{height:8px;background:var(--sheet);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.factor .bar i{display:block;height:100%;background:var(--crit)}
+.action{background:var(--accent-soft);border-radius:6px;padding:10px 12px;font-size:13px}
+.action b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--accent);margin-bottom:2px}
+.summary p{margin:0 0 10px;max-width:75ch}
+.summary ul{margin:0 0 10px;padding-left:18px;max-width:75ch}
+.summary li{margin-bottom:4px}
+svg text{font-family:var(--f-body)}
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.ms{display:flex;flex-direction:column;gap:10px}
+.ms-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;font-size:13px}
+.ms-row .track{grid-column:1/-1;height:10px;background:var(--sheet);border:1px solid var(--line);border-radius:5px;position:relative;overflow:hidden}
+.ms-row .track i{position:absolute;left:0;top:0;bottom:0;background:var(--accent)}
+.ms-row .track em{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+.copied{color:var(--good);font-size:12px;font-weight:600}
+textarea.fallback{width:100%;min-height:120px;font:12px var(--f-mono);background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px}
+@media (prefers-reduced-motion:no-preference){tbody tr{transition:background .12s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">E2E delivery · Week of Nov 2, 2026</div>
+      <h1>Redbud Valley Fiber — Build Program <span class="sample">Sample data</span></h1>
+      <p class="sub">Every fiber build from design to activation. Risk scores update from stage age, contractor history, permit backlog, schedule float and budget burn. The company, projects and contractors are fictional demo data.</p>
+    </div>
+    <div class="filters">
+      <div class="f"><label class="l" for="fCounty">County</label><select id="fCounty"></select></div>
+      <div class="f"><label class="l" for="fVendor">Contractor</label><select id="fVendor"></select></div>
+      <div class="f"><label class="l" for="fRisk">Risk</label><select id="fRisk"><option value="all">All active</option><option value="crit">Likely late</option><option value="warn">At risk</option><option value="good">On track</option><option value="done">Activated</option></select></div>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="grid2">
+    <div class="panel">
+      <div class="panel-h"><h2>Jeopardy list</h2><span class="note" id="jCount"></span></div>
+      <div class="scroll" style="max-height:560px"><table id="jTable"><thead><tr><th>Project</th><th>Stage</th><th class="n">Risk</th><th class="n">Pred. slip</th><th>Contractor</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel" id="detail"></div>
+  </section>
+
+  <section class="grid3">
+    <div class="panel"><div class="panel-h"><h2>Pipeline by stage</h2><span class="note">projects</span></div><div id="pipe"></div>
+      <div class="legend"><span><i style="background:var(--good)"></i>On track</span><span><i style="background:var(--warn)"></i>At risk</span><span><i style="background:var(--crit)"></i>Likely late</span></div></div>
+    <div class="panel"><div class="panel-h"><h2>Where time is lost</h2><span class="note">avg days over standard, active jobs</span></div><div id="bneck"></div></div>
+    <div class="panel"><div class="panel-h"><h2>Homes passed</h2><span class="note">cumulative, weekly</span></div><div id="burn"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Actual</span><span><i style="background:var(--muted)"></i>Plan</span><span><i style="background:var(--feeder)"></i>Forecast at current pace</span></div></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel"><div class="panel-h"><h2>Contractor scorecard</h2><span class="note">trailing 12 months</span></div>
+      <div class="scroll"><table id="vTable"><thead><tr><th>Contractor</th><th class="n">Active</th><th class="n">On-time</th><th class="n">Rework</th><th class="n">Days over std.</th><th class="n">Likely late</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="panel"><div class="panel-h"><h2>Grant milestones</h2><span class="note">BEAD-funded projects only</span></div><div class="ms" id="ms"></div></div>
+  </section>
+
+  <section class="panel summary">
+    <div class="panel-h"><h2>Weekly executive summary</h2><div style="display:flex;gap:8px;align-items:center"><span id="copyMsg"></span><button class="primary" id="copySum">Copy summary</button></div></div>
+    <div id="sumText"></div>
+    <textarea class="fallback" id="sumFallback" hidden readonly aria-label="Summary text to copy"></textarea>
+    <div class="note">Written from the project data on this page each time it loads. It follows the filters above.</div>
+  </section>
+</div>
+
+<script>
+(function(){
+const TODAY=new Date(2026,10,6);
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const R=rng(20261106);
+const STAGES=['Design','Permitting','Make-ready','Construction','Splicing','Testing','Activated'];
+const BASE=[14,30,45,40,14,7,0];
+const TOTAL_BASE=BASE.reduce((a,b)=>a+b,0);
+const VENDORS=[
+ {n:'Northline Construction',onTime:.86,speed:.95,rework:.031},
+ {n:'Prairie Bore & Splice',onTime:.71,speed:1.18,rework:.068},
+ {n:'Keystone Aerial',onTime:.91,speed:.9,rework:.022},
+ {n:'Summit Make-Ready',onTime:.58,speed:1.38,rework:.094},
+ {n:'Bluestem Utility Services',onTime:.79,speed:1.05,rework:.047}];
+const COUNTIES=['Cedar County','Hollis County','Mason County'];
+const AUTH={'Cedar County':{n:'Cedar County Road Dept.',delay:8},'Hollis County':{n:'Hollis County Engineer',delay:29},'Mason County':{n:'State DOT District 4',delay:19}};
+const PLACES=['Cedar Ridge','Willow Creek','Hollis North','Old Mill Road','Pecan Flats','Mason East','Red Oak','Sandy Hollow','Turkey Creek','Lone Elm','Bluff Road','Antelope Hill','Prairie View','Cotton Gin Road','Big Spring','Fox Run','Quail Meadow','Rock Crossing','Cross Timbers','Dry Branch'];
+const FUND=['BEAD','BEAD','BEAD','ReConnect','Private'];
+const DAY=86400000;
+const fmtD=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+const fmt=v=>Math.round(v).toLocaleString('en-US');
+const money=v=>v>=1e6?'$'+(v/1e6).toFixed(2)+'M':'$'+Math.round(v/1000)+'K';
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// ---- sample program ----
+const P=[];
+const stageW=[3,6,7,8,5,3,8];
+function pickStage(){let t=stageW.reduce((a,b)=>a+b,0)*R();for(let i=0;i<stageW.length;i++){t-=stageW[i];if(t<=0)return i}return 6}
+for(let i=0;i<40;i++){
+  const county=COUNTIES[Math.floor(R()*3)], v=VENDORS[Math.floor(R()*VENDORS.length)], auth=AUTH[county];
+  const s=pickStage(), homes=Math.round(60+R()*360), place=PLACES[i%PLACES.length];
+  const phase=1+Math.floor(i/PLACES.length)+(R()<.3?1:0);
+  let days=0;
+  if(s<6){days=Math.round(BASE[s]*v.speed*(0.35+R()*1.25)+(s===1?auth.delay*R()*1.2:0)+(s===2&&v.speed>1.2?R()*25:0))}
+  const doneW=BASE.slice(0,s).reduce((a,b)=>a+b,0)+Math.min(days,BASE[s]);
+  const pct=s===6?1:doneW/TOTAL_BASE;
+  const float=Math.round((R()-0.3)*36);
+  const planRemaining=s===6?0:Math.max(3,BASE.slice(s).reduce((a,b)=>a+b,0)-Math.min(days,BASE[s])+float);
+  const curLeft=s===6?0:Math.max(BASE[s]*0.2,BASE[s]*v.speed+(s===1?auth.delay:0)-days);
+  const expRemaining=s===6?0:curLeft+BASE.slice(s+1).reduce((a,b)=>a+b,0)*v.speed;
+  const budget=homes*(3400+R()*1900);
+  const spent=budget*pct*(0.88+R()*(v.rework>.06?0.45:0.25));
+  P.push({id:'RVF-'+String(101+i),name:place+' Ph.'+phase,county,authority:auth.n,authDelay:auth.delay,vendor:v.n,v,stage:s,days,homes,pct,
+    planDone:new Date(TODAY.getTime()+planRemaining*DAY),planRemaining,expRemaining,budget,spent,fund:FUND[Math.floor(R()*FUND.length)],
+    activated:s===6?new Date(TODAY.getTime()-Math.round(R()*150)*DAY):null});
+}
+// ---- risk model (transparent points) ----
+function risk(p){
+  if(p.stage===6)return{score:0,band:'done',factors:[],slip:0};
+  const over=Math.max(0,(p.days-BASE[p.stage])/BASE[p.stage]);
+  const f=[];
+  f.push({k:'Time in current stage',pts:Math.min(35,over*35),why:`${p.days} days in ${STAGES[p.stage]} vs ${BASE[p.stage]}-day standard`});
+  f.push({k:'Contractor history',pts:(1-p.v.onTime)*45,why:`${p.vendor} finishes ${Math.round(p.v.onTime*100)}% of stages on time`});
+  f.push({k:'Permit backlog',pts:p.stage<=1?Math.min(15,p.authDelay/2):0,why:p.stage<=1?`${p.authority} averages ${p.authDelay} days over standard`:'Permits already issued'});
+  const gap=p.expRemaining-p.planRemaining;
+  f.push({k:'Schedule float',pts:Math.max(0,Math.min(25,gap/2)),why:gap>0?`Needs ~${Math.round(p.expRemaining)} days at this crew's pace; ${p.planRemaining} days left in the plan`:`${Math.round(-gap)} days of float left`});
+  const burn=p.pct>0?p.spent/(p.budget*p.pct):1;
+  f.push({k:'Budget burn',pts:Math.max(0,Math.min(10,(burn-1)*40)),why:`${Math.round(burn*100)}% of earned value spent`});
+  const score=Math.min(100,Math.round(f.reduce((a,x)=>a+x.pts,0)));
+  const band=score>=50?'crit':score>=18?'warn':'good';
+  return{score,band,factors:f.sort((a,b)=>b.pts-a.pts),slip:Math.max(0,Math.round(gap)),burn};
+}
+P.forEach(p=>Object.assign(p,{r:risk(p)}));
+function actionFor(p){
+  const top=p.r.factors[0];if(!top)return'';
+  switch(top.k){
+    case'Time in current stage':return p.stage===2?`Ask ${p.vendor} for a make-ready recovery plan with crew counts by date. Get the pole owner on a joint call this week.`:`Run a 15-minute stage review with ${p.vendor}: what is blocking ${STAGES[p.stage].toLowerCase()}, who owns it, and the date it clears.`;
+    case'Contractor history':return`Add a second crew or split the scope. ${p.vendor} has the lowest on-time rate on this job type; move splicing to a better-performing crew if the date slips again.`;
+    case'Permit backlog':return`Escalate with ${p.authority}. Ask for a joint review meeting and submit the remaining sheets as one package.`;
+    case'Schedule float':return`Re-baseline with the customer or funding office now, before the date is missed. Show the recovery plan alongside the new date.`;
+    default:return`Review open change orders and rework charges with ${p.vendor} before approving the next invoice.`;
+  }
+}
+const pillOf=b=>({crit:'<span class="pill p-crit">Likely late</span>',warn:'<span class="pill p-warn">At risk</span>',good:'<span class="pill p-good">On track</span>',done:'<span class="pill p-done">Activated</span>'}[b]);
+
+// ---- filters ----
+const fC=document.getElementById('fCounty'),fV=document.getElementById('fVendor'),fR=document.getElementById('fRisk');
+fC.innerHTML='<option value="all">All counties</option>'+COUNTIES.map(c=>`<option>${c}</option>`).join('');
+fV.innerHTML='<option value="all">All contractors</option>'+VENDORS.map(v=>`<option>${esc(v.n)}</option>`).join('');
+let selId=null;
+function scope(){return P.filter(p=>(fC.value==='all'||p.county===fC.value)&&(fV.value==='all'||p.vendor===fV.value))}
+function listed(){const s=scope();return s.filter(p=>fR.value==='all'?p.stage<6:p.r.band===fR.value)}
+
+// ---- render ----
+function kpis(S){
+  const passed=S.filter(p=>p.stage>=4).reduce((a,p)=>a+p.homes,0);
+  const total=S.reduce((a,p)=>a+p.homes,0);
+  const planToDate=Math.round(total*Math.min(1,26/38));
+  const act=S.filter(p=>p.stage<6), crit=act.filter(p=>p.r.band==='crit').length, warn=act.filter(p=>p.r.band==='warn').length;
+  const slipHomes=act.filter(p=>p.r.band==='crit').reduce((a,p)=>a+p.homes,0);
+  const earned=S.reduce((a,p)=>a+p.budget*p.pct,0), spent=S.reduce((a,p)=>a+p.spent,0);
+  const cpi=spent?earned/spent:1;
+  const diff=passed-planToDate;
+  document.getElementById('kpis').innerHTML=[
+    ['Homes passed',fmt(passed),`<b class="${diff>=0?'up':'down'}">${diff>=0?'+':''}${fmt(diff)}</b> vs plan to date (${fmt(planToDate)})`],
+    ['Active builds',act.length,`<b class="down">${crit}</b> likely late · <b style="color:var(--warn)">${warn}</b> at risk`],
+    ['Homes at risk of slipping',fmt(slipHomes),`in builds scored likely late`],
+    ['Cost performance',cpi.toFixed(2),`${money(earned)} earned · ${money(spent)} spent${cpi<1?' · <b class="down">over</b>':''}`],
+    ['Program homes',fmt(total),`${S.length} projects · ${S.filter(p=>p.fund==='BEAD').length} BEAD-funded`]
+  ].map(k=>`<div class="kpi"><div class="eyebrow">${k[0]}</div><div class="v">${k[1]}</div><div class="d">${k[2]}</div></div>`).join('');
+}
+function jTable(){
+  const L=listed().sort((a,b)=>b.r.score-a.r.score||b.homes-a.homes);
+  document.getElementById('jCount').textContent=`${L.length} project${L.length===1?'':'s'} · sorted by risk`;
+  if(!L.find(p=>p.id===selId))selId=L[0]?L[0].id:null;
+  document.querySelector('#jTable tbody').innerHTML=L.map(p=>`<tr class="click${p.id===selId?' sel':''}" data-id="${p.id}" tabindex="0">
+    <td><div class="pname">${esc(p.name)}</div><div class="why">${p.id} · ${fmt(p.homes)} homes · ${p.county}</div>${p.r.factors[0]?`<div class="why">${esc(p.r.factors[0].why)}</div>`:''}</td>
+    <td>${STAGES[p.stage]}<div class="stagebar">${STAGES.slice(0,6).map((s,i)=>`<i class="${i<p.stage?'on':i===p.stage?'cur':''}"></i>`).join('')}</div></td>
+    <td class="n">${pillOf(p.r.band)}<div class="score" style="margin-top:4px">${p.stage<6?p.r.score:'—'}</div></td>
+    <td class="n">${p.stage===6?'—':p.r.slip?p.r.slip+' d':'0'}</td>
+    <td>${esc(p.vendor)}</td></tr>`).join('')||'<tr><td colspan="5" class="note">No projects match these filters.</td></tr>';
+}
+function detail(){
+  const el=document.getElementById('detail');const p=P.find(x=>x.id===selId);
+  if(!p){el.innerHTML='<h2>Project detail</h2><p class="note">Pick a project in the jeopardy list to see why it scored the way it did.</p>';return}
+  const r=p.r;
+  el.innerHTML=`<div class="panel-h"><div><div class="eyebrow">${p.id} · ${p.fund}</div><h2 style="font-size:20px">${esc(p.name)}</h2></div>${pillOf(r.band)}</div>
+  <div class="detail">
+   <div class="facts">
+    <div><span>Stage</span><b>${STAGES[p.stage]}${p.stage<6?` · day ${p.days}`:''}</b></div>
+    <div><span>Homes</span><b>${fmt(p.homes)}</b></div>
+    <div><span>${p.stage<6?'Committed date':'Activated'}</span><b>${p.stage<6?fmtD(p.planDone):fmtD(p.activated)}</b></div>
+    <div><span>Forecast</span><b>${p.stage<6?fmtD(new Date(TODAY.getTime()+p.expRemaining*DAY))+(r.slip?` <span class="down">(+${r.slip} d)</span>`:''):'Complete'}</b></div>
+    <div><span>Budget</span><b>${money(p.budget)}</b></div>
+    <div><span>Spent</span><b>${money(p.spent)} · ${Math.round(p.pct*100)}% built</b></div>
+    <div><span>Contractor</span><b>${esc(p.vendor)}</b></div>
+    <div><span>Permitting authority</span><b>${esc(p.authority)}</b></div>
+   </div>
+   ${p.stage<6?`<div><div class="panel-h" style="margin-bottom:8px"><span class="eyebrow">Why this score: ${r.score} / 100</span></div>
+    ${r.factors.map(f=>`<div class="factor"><span>${f.k}</span><div class="bar"><i style="width:${Math.min(100,f.pts/45*100)}%"></i></div><span class="mono" style="text-align:right">${Math.round(f.pts)}</span></div><div class="why" style="margin:0 0 6px">${esc(f.why)}</div>`).join('')}</div>
+    <div class="action"><b>Recommended next step</b>${esc(actionFor(p))}</div>
+    <div style="display:flex;gap:8px;align-items:center"><button id="copyUpd">Copy status update</button><span id="updMsg"></span></div>
+    <textarea class="fallback" id="updFallback" hidden readonly aria-label="Status update to copy"></textarea>`:'<p class="note">This build is live. It counts toward homes passed and grant milestones.</p>'}
+  </div>`;
+  const b=document.getElementById('copyUpd');
+  if(b)b.onclick=()=>copy(`${p.name} (${p.id}), ${fmt(p.homes)} homes. Stage: ${STAGES[p.stage]}, day ${p.days} of a ${BASE[p.stage]}-day standard. Risk ${r.score}/100 (${{crit:'likely late',warn:'at risk',good:'on track'}[r.band]}). Committed ${fmtD(p.planDone)}, forecast ${fmtD(new Date(TODAY.getTime()+p.expRemaining*DAY))}. Main driver: ${r.factors[0].why}. Next step: ${actionFor(p)}`,'updMsg','updFallback');
+}
+function svgEl(w,h,inner){return`<svg class="chart" viewBox="0 0 ${w} ${h}" role="img">${inner}</svg>`}
+function pipeline(S){
+  const W=420,rowH=30,top=6,left=96,right=40,H=top+STAGES.length*rowH+18;
+  const max=Math.max(1,...STAGES.map((_,i)=>S.filter(p=>p.stage===i).length));
+  const sx=v=>v/max*(W-left-right);
+  let g='';
+  STAGES.forEach((s,i)=>{
+    const y=top+i*rowH, ps=S.filter(p=>p.stage===i);
+    const parts=i===6?[['done',ps.length]]:[['good',ps.filter(p=>p.r.band==='good').length],['warn',ps.filter(p=>p.r.band==='warn').length],['crit',ps.filter(p=>p.r.band==='crit').length]];
+    g+=`<text x="${left-8}" y="${y+rowH/2+4}" text-anchor="end" font-size="12" fill="var(--ink)">${s}</text>`;
+    let x=left;
+    parts.forEach(([b,n])=>{if(!n)return;const w=sx(n);g+=`<rect x="${x}" y="${y+6}" width="${Math.max(0,w-1)}" height="${rowH-12}" rx="2" fill="${b==='done'?'var(--muted)':`var(--${b})`}"/>`;x+=w});
+    const homes=ps.reduce((a,p)=>a+p.homes,0);
+    g+=`<text x="${x+6}" y="${y+rowH/2+4}" font-size="11" fill="var(--muted)" font-family="var(--f-mono)">${ps.length}${ps.length?` · ${fmt(homes)} hh`:''}</text>`;
+  });
+  document.getElementById('pipe').innerHTML=svgEl(W,H,g);
+}
+function bottleneck(S){
+  const act=S.filter(p=>p.stage<6);
+  const rows=[];
+  VENDORS.forEach(v=>{const ps=act.filter(p=>p.vendor===v.n);if(ps.length)rows.push({k:v.n,grp:'Contractor',v:ps.reduce((a,p)=>a+Math.max(0,p.days-BASE[p.stage]),0)/ps.length,n:ps.length})});
+  Object.values(AUTH).forEach(a=>{const ps=act.filter(p=>p.authority===a.n&&p.stage<=1);if(ps.length)rows.push({k:a.n,grp:'Permits',v:ps.reduce((s,p)=>s+Math.max(0,p.days-BASE[p.stage]),0)/ps.length,n:ps.length})});
+  rows.sort((a,b)=>b.v-a.v);
+  const W=420,rowH=34,left=8,right=56,H=rows.length*rowH+8;
+  const max=Math.max(5,...rows.map(r=>r.v));
+  let g='';
+  rows.forEach((r,i)=>{const y=i*rowH+4,w=r.v/max*(W-left-right);
+    g+=`<text x="${left}" y="${y+11}" font-size="12" fill="var(--ink)">${esc(r.k)} <tspan fill="var(--muted)" font-size="11">· ${r.grp.toLowerCase()} · ${r.n} job${r.n>1?'s':''}</tspan></text>
+    <rect x="${left}" y="${y+17}" width="${W-left-right}" height="9" rx="2" fill="var(--sheet)"/>
+    <rect x="${left}" y="${y+17}" width="${Math.max(2,w)}" height="9" rx="2" fill="${r.grp==='Permits'?'var(--feeder)':'var(--accent)'}"/>
+    <text x="${W-right+8}" y="${y+26}" font-size="12" fill="var(--ink)" font-family="var(--f-mono)">${r.v.toFixed(1)} d</text>`});
+  document.getElementById('bneck').innerHTML=rows.length?svgEl(W,H,g):'<p class="note">No active jobs in this filter.</p>';
+}
+function burnup(S){
+  const total=S.reduce((a,p)=>a+p.homes,0);
+  const passed=S.filter(p=>p.stage>=4).reduce((a,p)=>a+p.homes,0);
+  const NOW=26,END=52;
+  const plan=w=>total*Math.min(1,w/38);// committed plan: all homes passed by week 38
+  const actual=[];for(let w=0;w<=NOW;w++){const t=w/NOW;actual.push(passed*(t*t*(3-2*t)*0.85+t*0.15))}
+  const pace=(actual[NOW]-actual[NOW-6])/6;
+  const fc=w=>Math.min(total,actual[NOW]+pace*(w-NOW));
+  const W=420,H=230,l=46,r=14,t=12,b=28;
+  const ymax=Math.max(total,1),sx=w=>l+w/END*(W-l-r),sy=v=>t+(1-v/ymax)*(H-t-b);
+  let g='';
+  const ticks=4;for(let i=0;i<=ticks;i++){const v=ymax*i/ticks,y=sy(v);g+=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--f-mono)">${v>=1000?(v/1000).toFixed(1)+'k':Math.round(v)}</text>`}
+  const start=new Date(TODAY.getTime()-NOW*7*DAY);
+  [0,13,26,39,52].forEach(w=>{g+=`<text x="${sx(w)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${fmtD(new Date(start.getTime()+w*7*DAY))}</text>`});
+  let pp='';for(let w=0;w<=END;w++)pp+=(w?'L':'M')+sx(w).toFixed(1)+','+sy(plan(w)).toFixed(1);
+  g+=`<path d="${pp}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  let ap='',area='';actual.forEach((v,w)=>{ap+=(w?'L':'M')+sx(w).toFixed(1)+','+sy(v).toFixed(1)});
+  area=ap+`L${sx(NOW)},${sy(0)}L${sx(0)},${sy(0)}Z`;
+  g+=`<path d="${area}" fill="var(--accent)" opacity=".12"/><path d="${ap}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+  g+=`<path d="M${sx(NOW)},${sy(actual[NOW])}L${sx(END)},${sy(fc(END))}" stroke="var(--feeder)" stroke-width="2" stroke-dasharray="5 4" fill="none"/>`;
+  g+=`<line x1="${sx(NOW)}" x2="${sx(NOW)}" y1="${t}" y2="${H-b}" stroke="var(--ink)" stroke-opacity=".25"/><circle cx="${sx(NOW)}" cy="${sy(actual[NOW])}" r="4" fill="var(--accent)"/>
+  <text x="${sx(NOW)-6}" y="${sy(actual[NOW])-9}" text-anchor="end" font-size="11" font-weight="600" fill="var(--ink)">${fmt(actual[NOW])} today</text>
+  <text x="${sx(END)}" y="${sy(fc(END))-8}" text-anchor="end" font-size="11" fill="var(--feeder)">${fmt(fc(END))} by year end</text>`;
+  document.getElementById('burn').innerHTML=svgEl(W,H,g);
+  return{passed,plan:plan(NOW),forecast:fc(END),total};
+}
+function vendors(S){
+  document.querySelector('#vTable tbody').innerHTML=VENDORS.map(v=>{const ps=S.filter(p=>p.vendor===v.n),act=ps.filter(p=>p.stage<6);
+    if(!ps.length)return'';const over=act.length?act.reduce((a,p)=>a+Math.max(0,p.days-BASE[p.stage]),0)/act.length:0;const late=act.filter(p=>p.r.band==='crit').length;
+    const cls=v.onTime>=.85?'p-good':v.onTime>=.7?'p-warn':'p-crit';
+    return`<tr><td>${esc(v.n)}</td><td class="n">${act.length}</td><td class="n"><span class="pill ${cls}">${Math.round(v.onTime*100)}%</span></td><td class="n">${(v.rework*100).toFixed(1)}%</td><td class="n">${over.toFixed(1)}</td><td class="n">${late}</td></tr>`}).join('');
+}
+function milestones(S){
+  const B=S.filter(p=>p.fund==='BEAD');const tot=B.reduce((a,p)=>a+p.homes,0);
+  const passed=B.filter(p=>p.stage>=4).reduce((a,p)=>a+p.homes,0), live=B.filter(p=>p.stage===6).reduce((a,p)=>a+p.homes,0);
+  const spent=B.reduce((a,p)=>a+p.spent,0),bud=B.reduce((a,p)=>a+p.budget,0);
+  const rows=[
+    ['Locations passed',passed,tot,0.4,'Interim target: 40% by Jun 30, 2027'],
+    ['Locations with service available',live,tot,0.25,'Interim target: 25% by Jun 30, 2027'],
+    ['Grant funds drawn',spent,bud,0.45,'Draws tracked against eligible spend']];
+  document.getElementById('ms').innerHTML=tot?rows.map(([k,v,t,tg,note])=>{const pc=t?v/t:0;
+    return`<div class="ms-row"><span>${k}</span><span class="mono">${k.includes('funds')?money(v)+' / '+money(t):fmt(v)+' / '+fmt(t)} · ${Math.round(pc*100)}%</span>
+    <div class="track"><i style="width:${Math.min(100,pc*100)}%"></i><em style="left:${tg*100}%" title="target"></em></div><span class="note" style="grid-column:1/-1">${note}${pc>=tg?' · on pace':' · <span class="down">behind target</span>'}</span></div>`}).join('')+
+    '<p class="note" style="margin:0">Milestone targets here are placeholders. Load your state broadband office\'s actual subgrant milestones.</p>':'<p class="note">No BEAD-funded projects in this filter.</p>';
+}
+function summary(S,b){
+  const act=S.filter(p=>p.stage<6).sort((a,c)=>c.r.score-a.r.score);
+  const crit=act.filter(p=>p.r.band==='crit');
+  const fc=[...new Set(crit.map(p=>p.r.factors[0].k))];
+  const vworst=VENDORS.map(v=>({v,late:crit.filter(p=>p.vendor===v.n).length})).sort((a,c)=>c.late-a.late)[0];
+  const behind=b.passed<b.plan;
+  const lines=[];
+  const head=`Homes passed stand at ${fmt(b.passed)}, ${behind?`${fmt(b.plan-b.passed)} behind`:`${fmt(b.passed-b.plan)} ahead of`} plan to date. At the current pace the program reaches ${fmt(b.forecast)} of ${fmt(b.total)} homes by year end. ${act.length} builds are active: ${crit.length} likely late and ${act.filter(p=>p.r.band==='warn').length} at risk.`;
+  const top=crit.slice(0,4).map(p=>`<li><b>${esc(p.name)}</b> (${fmt(p.homes)} homes, ${STAGES[p.stage]}) — risk ${p.r.score}, forecast +${p.r.slip} days. ${esc(p.r.factors[0].why)}. Next: ${esc(actionFor(p))}</li>`);
+  const pattern=vworst&&vworst.late>1?`${esc(vworst.v.n)} is on ${vworst.late} of the likely-late builds. Ask for a program-level recovery plan rather than fixing jobs one at a time.`:'';
+  const permit=act.filter(p=>p.stage<=1&&p.authDelay>20);
+  const permitTxt=permit.length?`${permit.length} build${permit.length>1?'s are':' is'} waiting on slow permitting authorities (${[...new Set(permit.map(p=>p.authority))].join(', ')}).`:'';
+  const html=`<p>${head}</p>${top.length?`<p><b>Needs attention this week</b></p><ul>${top.join('')}</ul>`:''}${pattern||permitTxt?`<p>${pattern} ${permitTxt}</p>`:''}<p>Main causes of delay right now: ${fc.length?fc.map(s=>s.toLowerCase()).join(', '):'none flagged'}.</p>`;
+  document.getElementById('sumText').innerHTML=html;
+  const tmp=document.createElement('div');tmp.innerHTML=html.replace(/<li>/g,'\n• ').replace(/<\/p>/g,'\n\n');
+  return tmp.textContent.replace(/\n{3,}/g,'\n\n').trim();
+}
+function copy(text,msgId,fbId){
+  const m=document.getElementById(msgId),fb=document.getElementById(fbId);
+  const ok=()=>{m.innerHTML='<span class="copied">Copied</span>';fb.hidden=true;setTimeout(()=>m.textContent='',2500)};
+  const fail=()=>{fb.value=text;fb.hidden=false;fb.focus();fb.select();m.textContent='Select the text below and copy it.'};
+  try{navigator.clipboard.writeText(text).then(ok,fail)}catch(e){fail()}
+}
+let sumPlain='';
+function render(){const S=scope();kpis(S);jTable();detail();pipeline(S);bottleneck(S);const b=burnup(S);vendors(S);milestones(S);sumPlain=summary(S,b)}
+document.querySelector('#jTable tbody').addEventListener('click',e=>{const tr=e.target.closest('tr[data-id]');if(!tr)return;selId=tr.dataset.id;jTable();detail()});
+document.querySelector('#jTable tbody').addEventListener('keydown',e=>{if(e.key==='Enter'){const tr=e.target.closest('tr[data-id]');if(tr){selId=tr.dataset.id;jTable();detail()}}});
+[fC,fV,fR].forEach(s=>s.addEventListener('change',render));
+document.getElementById('copySum').onclick=()=>copy(sumPlain,'copyMsg','sumFallback');
+render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Upload address points to get a complete FTTH network design: MST and DA boundaries, splitter sites, cable routing and sizing, handholes, splice counts, loss budget and cost estimate.">
+<meta property="og:description" content="Upload address points to get a complete FTTH network design: MST and DA boundaries, splitter sites, cable routing and sizing, handholes, splice counts, loss budget and cost estimate.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230D6FA0'/%3E%3Cpath d='M8 24 L16 8 L24 24' stroke='white' stroke-width='3' fill='none'/%3E%3Ccircle cx='16' cy='8' r='3' fill='%23D9691C'/%3E%3C/svg%3E">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>FTTH Design Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: engineering workbench. Control rail left, plan sheet right with its legend strip, results below as drawing schedules. */
+:root{
+  --bg:#EEF2F4; --surface:#FFFFFF; --sheet:#F7F9FA; --ink:#13202A; --muted:#5A6B77; --line:#D6DEE3; --street:#DCE3E8; --grid:#E6ECEF;
+  --accent:#0D6FA0; --accent-ink:#FFFFFF; --accent-soft:#DCEBF3; --feeder:#D9691C; --drop:#8A9AA5; --splice:#A021B5; --hh:#4A5A66; --da:#0D6FA0; --mdu:#B23A48; --pot:#5E7F1F; --mst:#A0661C;
+  --good:#23824F; --good-soft:#DDF0E5; --warn:#A87A06; --warn-soft:#F7EDCF; --crit:#C23B2E; --crit-soft:#F7DEDA; --hilite:#13202A;
+  --f-display:'Archivo','Arial Narrow',system-ui,sans-serif;
+  --f-body:'Public Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,'Cascadia Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1317; --surface:#141E24; --sheet:#0F181D; --ink:#E2EAEE; --muted:#8EA0AB; --line:#25343D; --street:#1F2D35; --grid:#16222A;
+  --accent:#3AA6D8; --accent-ink:#06131A; --accent-soft:#16303E; --feeder:#F28C3E; --drop:#5E727E; --splice:#D27BE3; --hh:#A9B8C2; --da:#5DB8E3; --mdu:#F07A88; --pot:#A3C65A; --mst:#E0A458;
+  --good:#46B37A; --good-soft:#15301F; --warn:#E0AE3A; --warn-soft:#352B12; --crit:#EE6A5C; --crit-soft:#3A1915; --hilite:#FFFFFF;
+  color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0C1317; --surface:#141E24; --sheet:#0F181D; --ink:#E2EAEE; --muted:#8EA0AB; --line:#25343D; --street:#1F2D35; --grid:#16222A;
+  --accent:#3AA6D8; --accent-ink:#06131A; --accent-soft:#16303E; --feeder:#F28C3E; --drop:#5E727E; --splice:#D27BE3; --hh:#A9B8C2; --da:#5DB8E3; --mdu:#F07A88; --pot:#A3C65A; --mst:#E0A458;
+  --good:#46B37A; --good-soft:#15301F; --warn:#E0AE3A; --warn-soft:#352B12; --crit:#EE6A5C; --crit-soft:#3A1915; --hilite:#FFFFFF;
+  color-scheme:dark;}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{max-width:1480px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+header.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(22px,3vw,30px);letter-spacing:-.01em;margin:2px 0 0}
+h2{font-family:var(--f-display);font-weight:700;font-size:16px;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;max-width:82ch}
+.runstat{font-family:var(--f-mono);font-size:12px;color:var(--muted);text-align:right}
+.runstat b{color:var(--ink);font-weight:500}
+.bench{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px}
+@media (max-width:920px){.bench{grid-template-columns:minmax(0,1fr)}}
+.rail{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:14px;align-self:start;min-width:0}
+.rail h3{font-family:var(--f-display);font-size:13px;font-weight:700;margin:0;padding-top:12px;border-top:1px solid var(--line);text-transform:uppercase;letter-spacing:.06em}
+.rail h3:first-child{border-top:0;padding-top:0}
+.field{display:flex;flex-direction:column;gap:5px}
+.field>label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.field>label output{font-family:var(--f-mono);text-transform:none;letter-spacing:0;color:var(--ink);font-weight:500}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+input[type=file]{font-size:12px;max-width:100%;color:var(--muted)}
+select,input[type=number],input[type=text],textarea{font:inherit;color:var(--ink);background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:7px 8px;width:100%}
+input[type=number]{font-family:var(--f-mono);font-size:13px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button{font:inherit;font-weight:600;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details summary{cursor:pointer;font-weight:600;font-size:13px}
+details[open] summary{margin-bottom:8px}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px}
+.chks{display:grid;grid-template-columns:1fr 1fr;gap:4px 8px}
+.msg{font-size:12px;color:var(--muted)}
+.msg.err{color:var(--crit)}
+.mapcol{display:flex;flex-direction:column;gap:8px;min-width:0}
+.mapbox{position:relative;background:var(--sheet);border:1px solid var(--line);border-radius:8px;overflow:hidden;height:min(74vh,820px);min-height:440px}
+canvas#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.mapctl{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:6px}
+.mapctl button{width:34px;height:34px;padding:0;font-size:16px;line-height:1}
+.maptitle{position:absolute;left:10px;top:10px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12px;max-width:calc(100% - 70px)}
+.maptitle b{font-family:var(--f-display)}
+.attrib{position:absolute;left:10px;bottom:10px;font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:2px 6px}
+.attrib a{color:var(--accent)}
+.bmnote{position:absolute;left:50%;top:52px;transform:translateX(-50%);max-width:min(460px,calc(100% - 24px));background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--ink);text-align:center}
+.legend{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;font-size:12px}
+.legend .grp{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.legend .grp>b{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;margin-right:2px;min-width:84px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:220px;max-width:320px;z-index:2}
+.tip h4{margin:0 0 4px;font-family:var(--f-display);font-size:14px}
+.tip .t{color:var(--muted);margin:-2px 0 6px}
+.tip dl{margin:0;display:grid;grid-template-columns:auto auto;gap:2px 12px}
+.tip dt{color:var(--muted)} .tip dd{margin:0;text-align:right;font-family:var(--f-mono);font-size:11.5px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:3px}
+.kpi .v{font-family:var(--f-display);font-weight:700;font-size:24px;font-variant-numeric:tabular-nums;line-height:1.15}
+.kpi .d{font-size:12px;color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.panel-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px 12px;flex-wrap:wrap}
+.note{color:var(--muted);font-size:12px}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:16px}
+.g2b{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px}
+@media (max-width:920px){.g2,.g2b{grid-template-columns:minmax(0,1fr)}}
+.scroll{overflow:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface);z-index:1}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--f-mono);font-size:12px}
+td.mono{font-family:var(--f-mono);font-size:12px}
+tr.cur td{background:var(--accent-soft)}
+tfoot td{font-weight:700;border-bottom:0}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-good{color:var(--good);background:var(--good-soft)} .p-warn{color:var(--warn);background:var(--warn-soft)} .p-crit{color:var(--crit);background:var(--crit-soft)} .p-rec{color:var(--accent);background:var(--accent-soft)}
+.drc{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.drc li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.drc .note{grid-column:1/-1}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--ink);vertical-align:-1px;margin-right:5px}
+.szc{display:inline-block;width:18px;height:4px;border-radius:2px;vertical-align:3px;margin-right:6px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+textarea.out{min-height:110px;font:12px var(--f-mono)}
+.chart{width:100%;height:auto;display:block}
+.savings{font-size:13px;background:var(--accent-soft);border-radius:6px;padding:8px 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">FTTH · distributed split design</div>
+      <h1>FTTH Design Studio</h1>
+      <p class="sub">Places drop terminals and splitters, draws MST and distribution-area boundaries, routes and sizes every cable along real streets, adds handholes and splice points, checks the optical loss to each home and prices the build. Upload your address points and the map zooms straight to them; add a boundary, OLT location and road centerlines for a fuller design. Apartment complexes are flagged as MDUs and left out. Double-click the map to move the OLT.</p>
+    </div>
+    <div class="runstat" id="runstat" aria-live="polite"></div>
+  </header>
+
+  <div class="bench">
+    <aside class="rail" aria-label="Design inputs">
+      <h3>Design your area</h3>
+      <p class="msg" style="margin:0">Upload address points and the map zooms to them. A boundary, OLT location and road centerlines (free from most county GIS sites) make the design more accurate. Accepted: shapefile (.zip, or .shp + .dbf + .prj selected together), GeoJSON, KML or KMZ, GPX, Excel or OpenDocument sheets, and CSV or tab-separated text with latitude/longitude (or X/Y) columns or a WKT column. For GeoPackage, DXF or DWG, export to one of these first.</p>
+      <div class="field"><label for="upBoundary">Boundary polygon <span>optional with addresses</span></label><input type="file" id="upBoundary" accept=".zip,.shp,.dbf,.prj,.shx,.cpg,.geojson,.json,.kml,.kmz,.gpx,.csv,.tsv,.txt,.wkt,.xlsx,.xlsm,.xls,.ods" multiple></div>
+      <div class="field"><label for="upOlt">OLT location</label><input type="file" id="upOlt" accept=".zip,.shp,.dbf,.prj,.shx,.cpg,.geojson,.json,.kml,.kmz,.gpx,.csv,.tsv,.txt,.wkt,.xlsx,.xlsm,.xls,.ods" multiple><input type="text" id="oltLL" placeholder="or type lat, lon"></div>
+      <div class="field"><label for="upHomes">Address points or buildings <span>required</span></label><input type="file" id="upHomes" accept=".zip,.shp,.dbf,.prj,.shx,.cpg,.geojson,.json,.kml,.kmz,.gpx,.csv,.tsv,.txt,.wkt,.xlsx,.xlsm,.xls,.ods" multiple></div>
+      <div class="field"><label for="upStreets">Road centerlines</label><input type="file" id="upStreets" accept=".zip,.shp,.dbf,.prj,.shx,.cpg,.geojson,.json,.kml,.kmz,.gpx,.csv,.tsv,.txt,.wkt,.xlsx,.xlsm,.xls,.ods" multiple></div>
+      <button id="upRun" class="primary">Design my area</button>
+      <div class="msg" id="upMsg" aria-live="polite"></div>
+
+      <h3>Architecture</h3>
+      <div class="field"><label for="arch">Split ratios</label><select id="arch"></select></div>
+      <div class="field"><label for="lotMode">Lot design</label><select id="lotMode"><option value="front">Front lot: cable along the street</option><option value="rear">Rear lot: cable along back property lines</option></select></div>
+      <div class="two" id="rearOpts" hidden>
+        <div class="field"><label for="rearPlant">Rear easement</label><select id="rearPlant"><option value="ug">Underground</option><option value="air">Aerial, rear-lot poles</option></select></div>
+        <div class="field"><label for="rearDist">Lot line behind home ft</label><input type="number" id="rearDist" value="70" step="5" min="20"></div>
+      </div>
+      <div class="field"><label for="hmode">Splitter placement</label><select id="hmode"><option value="1">H backbone: on main roads, shared closures</option><option value="0">Free: anywhere, shared closures</option></select></div>
+      <div class="field"><label for="chain">Feeder topology</label><select id="chain"><option value="1">Daisy chain through the DAs</option><option value="0">Home run to each splitter site</option></select></div>
+      <div class="field"><label for="target">Cost target per home</label><input type="number" id="target" value="2200" step="50" min="0"></div>
+      <div class="field"><label for="budget">PON class</label><select id="budget"></select></div>
+      <div class="field"><label for="spare">Spare ports per terminal</label><select id="spare"><option value="0" selected>0 (MST area up to 8 homes)</option><option value="1">1</option><option value="2">2</option></select></div>
+      <div class="field"><label for="daMax">DA boundary, max homes <output id="daMaxV"></output></label><input type="range" id="daMax" min="64" max="500" step="2" value="250"></div>
+      <div class="field"><label for="maxDrop">Max drop length <output id="maxDropV"></output></label><input type="range" id="maxDrop" min="100" max="600" step="25" value="250"></div>
+      <div class="field"><label for="f1Min">F1 backbone cable</label><select id="f1Min"><option value="144" selected>144F minimum on main roads</option><option value="288">288F minimum on main roads</option><option value="0">Sized to need</option></select></div>
+      <div class="field"><label for="f2Max">F2 distribution, largest</label><select id="f2Max"><option value="24">24F</option><option value="48" selected>48F (under 72F)</option></select></div>
+      <div class="field"><label for="cableSpare">Spare fibers in cables <output id="cableSpareV"></output></label><input type="range" id="cableSpare" min="0" max="50" step="5" value="20"></div>
+
+      <h3>Poles and aerial</h3>
+      <p class="msg" style="margin:0">Cable runs aerial only where usable poles exist; everywhere else it goes underground. Add poles any of these ways:</p>
+      <div class="field"><label for="upPoles">1 · Upload pole locations</label><input type="file" id="upPoles" accept=".zip,.shp,.dbf,.prj,.shx,.cpg,.geojson,.json,.kml,.kmz,.gpx,.csv,.tsv,.txt,.wkt,.xlsx,.xlsm,.xls,.ods" multiple>
+        <span class="msg">Shapefile, KMZ or KML, CSV (lat/lon or X/Y), Excel, GeoJSON or GPX. Poles marked unusable in a status column are skipped.</span></div>
+      <div class="msg" id="poleMsg" aria-live="polite"></div>
+      <div class="field"><label for="markBtn">2 · Mark streets on the map</label><button id="markBtn" aria-pressed="false">Mark streets with poles: off</button>
+        <span class="msg" id="markMsg">Turn on, then click a street to mark it aerial. Click again to clear.</span></div>
+      <div class="field"><label for="poleMode">3 · Or assume poles (what-if)</label><select id="poleMode"><option value="data">No assumption: uploaded or marked poles only</option><option value="main">Assume usable poles on main roads</option><option value="all">Assume usable poles on every street</option></select></div>
+      <div class="two">
+        <div class="field"><label for="cMR">Make-ready $/pole</label><input type="number" id="cMR" value="750" step="50" min="0"></div>
+        <div class="field"><label for="cSpan">Pole span ft</label><input type="number" id="cSpan" value="175" step="5" min="50"></div>
+      </div>
+      <button id="clearPoles">Clear poles and marked streets</button>
+
+      <h3>Construction</h3>
+      <div class="field"><label for="pull">Max pull between handholes <output id="pullV"></output></label><input type="range" id="pull" min="300" max="1200" step="50" value="600"></div>
+      <details><summary>Unit costs (sample)</summary>
+        <div class="two">
+          <div class="field"><label for="cAerial">Aerial $/ft</label><input type="number" id="cAerial" value="4.00" step="0.25" min="0"></div>
+          <div class="field"><label for="cUG">Underground $/ft</label><input type="number" id="cUG" value="16.00" step="0.5" min="0"></div>
+          <div class="field"><label for="cDropFt">Drop $/ft</label><input type="number" id="cDropFt" value="0.55" step="0.05" min="0"></div>
+          <div class="field"><label for="cDropInst">Drop install $</label><input type="number" id="cDropInst" value="225" step="5" min="0"></div>
+          <div class="field"><label for="cPon">PON optic $</label><input type="number" id="cPon" value="180" step="10" min="0"></div>
+          <div class="field"><label for="cSplice">Splice $</label><input type="number" id="cSplice" value="25" step="1" min="0"></div>
+        </div>
+      </details>
+
+      <h3>Site conditions</h3>
+      <div class="field"><label for="rock">Bore footage in rock <output id="rockV"></output></label><input type="range" id="rock" min="0" max="100" step="5" value="40"></div>
+      <details open><summary>Rock, permit and flowerpot costs (sample)</summary>
+        <div class="two">
+          <div class="field"><label for="cRock">Rock bore +$/ft</label><input type="number" id="cRock" value="18" step="1" min="0"></div>
+          <div class="field"><label for="cRockHH">Rock pit +$/ea</label><input type="number" id="cRockHH" value="400" step="25" min="0"></div>
+          <div class="field"><label for="cPermit">Permit $/1,000 ft</label><input type="number" id="cPermit" value="500" step="50" min="0"></div>
+          <div class="field"><label for="cRow">ROW fees $/ft</label><input type="number" id="cRow" value="1.00" step="0.1" min="0"></div>
+          <div class="field"><label for="cTcp">Traffic plan $/DA</label><input type="number" id="cTcp" value="1500" step="100" min="0"></div>
+          <div class="field"><label for="cPot">Flowerpot $/ea</label><input type="number" id="cPot" value="240" step="10" min="0"></div>
+          <div class="field"><label for="reach">Direct drop reach ft</label><input type="number" id="reach" value="250" step="5" min="0"></div>
+        </div>
+        <p class="msg" style="margin:6px 0 0">Rock share and rates are placeholders. Replace them with geotech or bore-log data and your city's right-of-way fee schedule.</p>
+      </details>
+
+      <h3>Map</h3>
+      <div class="chks">
+        <label class="chk"><input type="checkbox" id="lyDa" checked>DA areas</label>
+        <label class="chk"><input type="checkbox" id="lyMst" checked>MST areas</label>
+        <label class="chk"><input type="checkbox" id="lyCable" checked>Cables</label>
+        <label class="chk"><input type="checkbox" id="lyDrops">Drops</label>
+        <label class="chk"><input type="checkbox" id="lyHomes" checked>Homes</label>
+        <label class="chk"><input type="checkbox" id="lyTerms" checked>Terminals</label>
+        <label class="chk"><input type="checkbox" id="lyHH" checked>Handholes</label>
+        <label class="chk"><input type="checkbox" id="lySplice" checked>Splices</label>
+        <label class="chk"><input type="checkbox" id="lyMdu" checked>MDUs</label>
+        <label class="chk"><input type="checkbox" id="lyPot" checked>Flowerpots</label>
+        <label class="chk"><input type="checkbox" id="lyStreets" checked>Streets</label>
+        <label class="chk"><input type="checkbox" id="lyLabels" checked>Labels</label>
+      </div>
+      <div class="field"><label for="basemap">Basemap</label><select id="basemap"><option value="aerial" selected>Aerial imagery</option><option value="hybrid">Aerial with road names</option><option value="streets">Street map</option><option value="plan">Plan sheet (no basemap)</option></select></div>
+      <div class="field"><label for="colorBy">Color homes by</label><select id="colorBy"><option value="term">Terminal (fiber color code)</option><option value="loss">Optical margin</option></select></div>
+    </aside>
+
+    <div class="mapcol">
+      <div class="mapbox" id="mapbox">
+        <canvas id="map" aria-label="Design map. Hover any item for details, drag to pan, scroll to zoom, double-click to move the OLT."></canvas>
+        <div class="maptitle" id="maptitle"></div>
+        <div class="mapctl"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" aria-label="Fit design to view" style="font-size:12px">Fit</button></div>
+        <div class="tip" id="tip" hidden></div>
+        <div class="attrib" id="attrib" hidden></div>
+        <div class="bmnote" id="bmNote" hidden></div>
+      </div>
+      <div class="legend" id="legend" aria-label="Map legend"></div>
+    </div>
+  </div>
+
+  <section class="kpis" id="kpis"></section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Architecture comparison</h2><span class="note" id="cmpNote">Every split option, designed on the same homes with the same rules</span></div>
+    <div class="savings" id="savings" hidden></div>
+    <div class="scroll"><table id="cmp"><thead><tr><th>Split</th><th class="n">Homes / PON</th><th class="n">DAs</th><th class="n">Terminals</th><th class="n">Splitter sites</th><th class="n">PON ports</th><th class="n">Splices</th><th class="n">Handholes</th><th class="n">Min margin</th><th class="n">$ / home passed</th><th class="n">$ / home connected</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="g2">
+    <div class="panel"><div class="panel-h"><h2>Design rule check</h2></div><ul class="drc" id="drc"></ul></div>
+    <div class="panel"><div class="panel-h"><h2>Loss budget</h2><span class="note" id="lossNote"></span></div><div id="hist"></div>
+      <div class="note">Per home: fiber at 0.35 dB/km (1310 nm), both splitters, 4 connectors at 0.5 dB, fusion splices at 0.1 dB. Design target keeps 3 dB of margin.</div></div>
+  </section>
+
+  <section class="g2b">
+    <div class="panel"><div class="panel-h"><h2>Bill of materials</h2><span class="note">sample unit prices</span></div>
+      <div class="scroll"><table id="bom"><thead><tr><th>Item</th><th class="n">Qty</th><th>Unit</th><th class="n">Unit $</th><th class="n">Extended</th></tr></thead><tbody></tbody><tfoot></tfoot></table></div></div>
+    <div class="panel"><div class="panel-h"><h2>Distribution areas and splitters</h2><span class="note" id="hubNote"></span></div>
+      <div class="scroll" style="max-height:520px"><table id="hubs"><thead><tr><th>DA</th><th>Splitter</th><th>Site</th><th class="n">MSTs</th><th class="n">Homes</th><th class="n">From OLT ft</th><th class="n">Worst dB</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Splice and handhole schedule</h2><span class="note" id="stNote"></span></div>
+    <div class="scroll" style="max-height:460px"><table id="sts"><thead><tr><th>ID</th><th>Function</th><th>Structure</th><th class="n">Fibers spliced</th><th>Splice detail</th><th>Cables</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="g2b">
+    <div class="panel"><div class="panel-h"><h2>MST schedule</h2><span class="note" id="termNote"></span></div>
+      <div class="scroll" style="max-height:420px"><table id="terms"><thead><tr><th>MST</th><th>DA</th><th>Splitter</th><th>Fiber</th><th class="n">Homes</th><th class="n">Longest drop ft</th><th class="n">From splitter ft</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="panel"><div class="panel-h"><h2>MDUs excluded from this design</h2><span class="note" id="mduNote"></span></div>
+      <div class="scroll" style="max-height:420px"><table id="mdus"><thead><tr><th>MDU</th><th>Address</th><th class="n">Bldgs</th><th class="n">Est. units</th><th>Entry handhole</th><th class="n">Fibers reserved</th><th class="n">From OLT ft</th><th>Why flagged</th></tr></thead><tbody></tbody></table></div>
+      <p class="note" style="margin:0">Flagged where 3 or more addresses share one spot, or a units field shows 3 or more. Unit counts assume 2 floors and 90 m² per unit; confirm on site. Each MDU gets an entry handhole at the street with 2 feeder fibers per 32 estimated units (working plus spare) run from the OLT and coiled with 100 ft of slack. The in-building and riser design is not done here.</p></div>
+  </section>
+
+  <section class="panel"><div class="panel-h"><h2>Export</h2></div>
+    <p class="note" style="margin:0">Copies to the clipboard. Spreadsheet exports paste straight into Excel or Google Sheets. GeoJSON (with MST and DA boundary polygons) opens in QGIS, ArcGIS or any GIS tool.</p>
+    <div class="btnrow"><button id="exBom">Bill of materials</button><button id="exSt">Splice and handhole schedule</button><button id="exTerm">MST schedule</button><button id="exHome">Home assignments</button><button id="exMdu">MDU list</button><button id="exGeo">GeoJSON</button></div>
+    <span class="msg" id="exMsg" aria-live="polite"></span>
+    <textarea class="out" id="exOut" readonly hidden aria-label="Export text"></textarea>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/shpjs@4.0.4/dist/shp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+'use strict';
+// ---------- reference tables ----------
+const STD=[12,24,48,72,96,144,216,288,432];
+const CABLE_COST={12:.45,24:.6,48:.9,72:1.2,96:1.5,144:2.1,216:2.9,288:3.6,432:5};
+const SIZE_COL={12:'#2E9B4F',24:'#1F7FD1',48:'#7B4DB5',72:'#D14E9A',96:'#C99A00',144:'#D2342B',216:'#8B5A2B',288:'#00897B',432:'#5C6BC0'};
+const SL={1:0,2:3.7,4:7.3,8:10.5,16:13.7,32:17.1,64:20.5};
+const SPLITTER_COST={2:35,4:55,8:85,16:140,32:260};
+const TERM_COST={4:180,8:260,16:420,pass:220};
+const HH={vault:{label:'Splice vault 30×48 in',cost:1800},hh36:{label:'Handhole 24×36 in',cost:950},hh30:{label:'Handhole 17×30 in',cost:450},mdu:{label:'MDU entry handhole 24×36 in',cost:950}};
+const mduFibers=u=>Math.max(2,2*Math.ceil(u/32));
+const FIX={aerialClosure:450,poleBracket:60,poleApp:50,closure:650,cabinet:4500,midspan:350,oltCard:4200,odf:1200,ont:120,duct:1.10,tracer:0.15};
+const SLACK={site:60,branch:50,term:30,pull:0};
+const TIA=['#1F5FBF','#F07C1A','#2E9B4F','#8B5A2B','#7D8B94','#F2F4F5','#D2342B','#262626','#E8C21C','#7B4DB5','#E58FB0','#2BB3C0'];
+const TIA_N=['Blue','Orange','Green','Brown','Slate','White','Red','Black','Yellow','Violet','Rose','Aqua'];
+const ARCH=[
+  {id:'8x8',label:'1:8 → 1:8 (1:64)',hubSplit:8,termSplit:8,termPorts:8},
+  {id:'4x8',label:'1:4 → 1:8',hubSplit:4,termSplit:8,termPorts:8},
+  {id:'8x4',label:'1:8 → 1:4',hubSplit:8,termSplit:4,termPorts:4},
+  {id:'2x16',label:'1:2 → 1:16',hubSplit:2,termSplit:16,termPorts:16},
+  {id:'c32',label:'1:32 centralized cabinet',hubSplit:32,termSplit:1,termPorts:8,central:true,hubHomes:144}];
+const BUDGET={gpon:{label:'GPON Class B+ (28 dB)',db:28},gponc:{label:'GPON Class C+ (32 dB)',db:32},xn1:{label:'XGS-PON N1 (29 dB)',db:29},xn2:{label:'XGS-PON N2 (31 dB)',db:31}};
+const MARGIN=3,FT_PER_DEG=364000,ORIGIN={lat:36.06,lon:-95.92},FIBER_FT_COST=0.04,SITE_CAP=4;
+const ek=(a,b)=>Math.min(a,b)*1048576+Math.max(a,b);
+
+const $=s=>document.querySelector(s);
+const fmt=(v,d=0)=>Number(v).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=v=>'$'+fmt(v,Math.abs(v)<100?2:0);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=(n,w)=>String(n).padStart(w,'0');
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+// buffered convex hull: each point grows into a small ring, so 1-2 point areas still get a shape
+function hull(pts,r){const P=[];for(const p of pts)for(let k=0;k<10;k++){const a=k/10*Math.PI*2;P.push([p[0]+r*Math.cos(a),p[1]+r*Math.sin(a)])}
+  P.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);const lo=[],up=[];
+  for(const p of P){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}
+  for(let i=P.length-1;i>=0;i--){const p=P[i];while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}
+  return lo.slice(0,-1).concat(up.slice(0,-1))}
+
+// ---------- priority queue ----------
+class Heap{constructor(){this.d=[];this.n=[]}get size(){return this.d.length}
+  push(d,n){const D=this.d,N=this.n;let i=D.length;D.push(d);N.push(n);while(i>0){const p=(i-1)>>1;if(D[p]<=d)break;D[i]=D[p];N[i]=N[p];i=p}D[i]=d;N[i]=n}
+  pop(){const D=this.d,N=this.n,top=N[0];const ld=D.pop(),ln=N.pop();const L=D.length;if(L){let i=0;for(;;){let l=2*i+1;if(l>=L)break;const r=l+1;if(r<L&&D[r]<D[l])l=r;if(D[l]>=ld)break;D[i]=D[l];N[i]=N[l];i=l}D[i]=ld;N[i]=ln}return top}}
+
+// ---------- graph ----------
+function makeGraph(){return{x:[],y:[],adj:[],key:new Map()}}
+function addNode(g,x,y){const k=x+','+y;let i=g.key.get(k);if(i!==undefined)return i;i=g.x.length;g.x.push(x);g.y.push(y);g.adj.push([]);g.key.set(k,i);return i}
+function addEdge(g,a,b){if(a===b)return;const w=Math.hypot(g.x[a]-g.x[b],g.y[a]-g.y[b]);g.adj[a].push(b,w);g.adj[b].push(a,w)}
+function sparseDij(g,src,cutoff,targets){const dist=new Map([[src,0]]),par=new Map([[src,-1]]),done=new Set();const h=new Heap();h.push(0,src);let left=targets?targets.size:-1;
+  while(h.size){const d=h.d[0],u=h.pop();if(done.has(u))continue;done.add(u);if(targets&&targets.has(u)&&--left===0)break;const a=g.adj[u];
+    for(let i=0;i<a.length;i+=2){const v=a[i],nd=d+a[i+1];if(nd>cutoff)continue;const c=dist.get(v);if(c===undefined||nd<c){dist.set(v,nd);par.set(v,u);h.push(nd,v)}}}
+  return{dist,par}}
+// feeder tree from the OLT; main roads are preferred so feeder follows the backbone, true distances are measured afterwards
+function tree(g,co,bb){
+  const n=g.x.length,w=new Float64Array(n).fill(Infinity),par=new Int32Array(n).fill(-1),done=new Uint8Array(n);w[co]=0;const h=new Heap();h.push(0,co);
+  while(h.size){const d=h.d[0],u=h.pop();if(done[u])continue;done[u]=1;const a=g.adj[u];for(let i=0;i<a.length;i+=2){const v=a[i],nd=d+a[i+1]*(bb&&bb[u]&&bb[v]?0.7:1);if(nd<w[v]){w[v]=nd;par[v]=u;h.push(nd,v)}}}
+  const kids=Array.from({length:n},()=>[]);for(let v=0;v<n;v++){const p=par[v];if(p>=0)kids[p].push(v)}
+  const dfs=new Int32Array(n).fill(-1),dist=new Float64Array(n).fill(Infinity);dist[co]=0;let c=0;const st=[co];
+  while(st.length){const u=st.pop();dfs[u]=c++;if(u!==co)dist[u]=dist[par[u]]+Math.hypot(g.x[u]-g.x[par[u]],g.y[u]-g.y[par[u]]);const k=kids[u];for(let i=k.length-1;i>=0;i--)st.push(k[i])}
+  return{dCO:dist,pCO:par,dfs};
+}
+function connect(g){
+  const n=g.x.length,d2=(a,b)=>(g.x[a]-g.x[b])**2+(g.y[a]-g.y[b])**2;
+  const uf=[...Array(n).keys()],find=a=>{while(uf[a]!==a){uf[a]=uf[uf[a]];a=uf[a]}return a};
+  for(let u=0;u<n;u++){const a=g.adj[u];for(let i=0;i<a.length;i+=2){const ra=find(u),rb=find(a[i]);if(ra!==rb)uf[ra]=rb}}
+  for(let guard=0;guard<n;guard++){const comps=new Map();for(let i=0;i<n;i++){const r=find(i);if(!comps.has(r))comps.set(r,[]);comps.get(r).push(i)}if(comps.size<=1)break;
+    const small=[...comps.values()].sort((a,b)=>a.length-b.length)[0],rs=find(small[0]);let best=[Infinity,-1,-1];
+    for(const i of small)for(let j=0;j<n;j++){if(find(j)===rs)continue;const d=d2(i,j);if(d<best[0])best=[d,i,j]}
+    addEdge(g,best[1],best[2]);uf[find(best[1])]=find(best[2])}
+}
+function finalize(g,homes,co,geo,imported,name,bb){
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(let i=0;i<g.x.length;i++){minX=Math.min(minX,g.x[i]);maxX=Math.max(maxX,g.x[i]);minY=Math.min(minY,g.y[i]);maxY=Math.max(maxY,g.y[i])}
+  for(const h of homes){minX=Math.min(minX,h.x);maxX=Math.max(maxX,h.x);minY=Math.min(minY,h.y);maxY=Math.max(maxY,h.y)}
+  const edges=[];for(let u=0;u<g.adj.length;u++){const a=g.adj[u];for(let i=0;i<a.length;i+=2)if(a[i]>u)edges.push(u,a[i])}
+  const bbList=[];if(bb)for(let i=0;i<bb.length;i++)if(bb[i])bbList.push(i);
+  return Object.assign({g,homes,co,geo,imported,name,bounds:{minX,minY,maxX,maxY},edges,bb,bbList,mdus:[],lc:null},tree(g,co,bb));
+}
+function setCO(D,node){D.co=node;Object.assign(D,tree(D.g,node,D.bb));D.lc=null}
+
+// ---------- generated grid: crossbar + two legs form the H backbone ----------
+function genSample(N,seed){
+  const r=rng(seed),LOT=80,BLOCK=640,ROW=300,SET=60,STEP=40,VSTEP=50;
+  const cells=Math.ceil(N/(16*0.88));const R=Math.max(1,Math.ceil(Math.sqrt(cells/0.656)));const C=Math.max(1,Math.ceil(cells/R));
+  const g=makeGraph(),W=C*BLOCK;
+  for(let row=0;row<R;row++){let prev=-1;for(let x=0;x<=W;x+=STEP){const i=addNode(g,x,row*ROW);if(prev>=0)addEdge(g,prev,i);prev=i}}
+  if(R>1)for(let c=0;c<=C;c++){let prev=-1;for(let y=0;y<=(R-1)*ROW;y+=VSTEP){const i=addNode(g,c*BLOCK,y);if(prev>=0)addEdge(g,prev,i);prev=i}}
+  const mid=Math.floor((R-1)/2)*ROW;let prev=addNode(g,0,mid);for(let x=-STEP;x>=-480;x-=STEP){const i=addNode(g,x,mid);addEdge(g,prev,i);prev=i}const co=prev;
+  const L1=Math.round(C*0.25)*BLOCK,L2=Math.round(C*0.75)*BLOCK;
+  const bb=new Uint8Array(g.x.length);for(let i=0;i<g.x.length;i++)if(g.y[i]===mid||(R>1&&(g.x[i]===L1||g.x[i]===L2)))bb[i]=1;
+  const lots=[];for(let row=0;row<R;row++)for(let c=0;c<C;c++)for(let k=0;k<8;k++)for(const s of[-1,1])lots.push({x:c*BLOCK+40+k*LOT,row,s});
+  for(let i=lots.length-1;i>0;i--){const j=Math.floor(r()*(i+1));const t=lots[i];lots[i]=lots[j];lots[j]=t}
+  const pick=lots.slice(0,Math.min(N,lots.length)).sort((a,b)=>a.row-b.row||a.s-b.s||a.x-b.x);
+  const homes=pick.map((l,i)=>{const nx=l.x,ny=l.row*ROW,node=g.key.get(nx+','+ny);const hx=nx+(r()-.5)*16,hy=ny+l.s*(SET+(r()-.5)*14);
+    return{id:'H-'+pad(i+1,4),x:hx,y:hy,node,att:Math.hypot(hx-nx,hy-ny)}});
+  return finalize(g,homes,co,{lat0:ORIGIN.lat,lon0:ORIGIN.lon,k:Math.cos(ORIGIN.lat*Math.PI/180)*FT_PER_DEG},false,`${fmt(N)}-home sample grid`,bb);
+}
+// ---------- real streets: every home taps the nearest point on the nearest street ----------
+function buildReal(R){
+  const all=R.nodes.concat(R.homes.map(h=>[h[1],h[2]]));
+  const lat0=all.reduce((s,p)=>s+p[0],0)/all.length,lon0=all.reduce((s,p)=>s+p[1],0)/all.length,k=Math.cos(lat0*Math.PI/180)*FT_PER_DEG;
+  const P=(la,lo)=>[Math.round((lo-lon0)*k*10)/10,Math.round(-(la-lat0)*FT_PER_DEG*10)/10];
+  const g=makeGraph(),main=new Set();const nid=R.nodes.map(([la,lo])=>{const p=P(la,lo);return addNode(g,p[0],p[1])});
+  const segs=[],edgeWay=new Map();R.ways.forEach((w,wi)=>{const isMain=w.c==='t'||w.c==='u';for(let i=1;i<w.p.length;i++){const a=nid[w.p[i-1]],b=nid[w.p[i]];if(a!==b)segs.push({a,b,isMain,cuts:[],wi})}});
+  const homes=R.homes.map(([id,la,lo])=>{const p=P(la,lo);return{id,x:p[0],y:p[1],node:-1,att:0}});
+  homes.forEach((h,hi)=>{let best=null;
+    for(const s of segs){const ax=g.x[s.a],ay=g.y[s.a],dx=g.x[s.b]-ax,dy=g.y[s.b]-ay,L=dx*dx+dy*dy;
+      const t=L?Math.max(0,Math.min(1,((h.x-ax)*dx+(h.y-ay)*dy)/L)):0,px=ax+t*dx,py=ay+t*dy,d=Math.hypot(h.x-px,h.y-py);
+      if(!best||d<best.d)best={s,t,px,py,d}}
+    best.s.cuts.push({t:best.t,h:hi,px:Math.round(best.px*10)/10,py:Math.round(best.py*10)/10})});
+  for(const s of segs){let prev=s.a;if(s.isMain){main.add(s.a);main.add(s.b)}s.cuts.sort((a,b)=>a.t-b.t);
+    for(const c of s.cuts){const n=addNode(g,c.px,c.py);if(s.isMain)main.add(n);if(n!==prev){addEdge(g,prev,n);edgeWay.set(ek(prev,n),s.wi)}homes[c.h].node=n;homes[c.h].att=Math.hypot(homes[c.h].x-c.px,homes[c.h].y-c.py);prev=n}
+    if(prev!==s.b){addEdge(g,prev,s.b);edgeWay.set(ek(prev,s.b),s.wi)}}
+  connect(g);
+  const bb=new Uint8Array(g.x.length);main.forEach(i=>bb[i]=1);
+  let minX=Infinity,maxY=-Infinity;for(let i=0;i<g.x.length;i++){minX=Math.min(minX,g.x[i]);maxY=Math.max(maxY,g.y[i])}
+  let co=-1,bd=Infinity;(main.size?main:new Set(g.x.keys())).forEach(i=>{if(!g.adj[i].length)return;const d=(g.x[i]-minX)**2+(g.y[i]-maxY)**2;if(d<bd){bd=d;co=i}});
+  const D=finalize(g,homes,co,{lat0,lon0,k},true,`${R.name} · ${fmt(homes.length)} homes`,bb);D.real=true;
+  D.edgeWay=edgeWay;D.wayNames=R.ways.map(w=>w.n);
+  attachMdus(D,R.mdus);
+  return D;
+}
+// MDUs are drawn and given an entry handhole at the closest point of the street network
+function attachMdus(D,mdus){const G=D.geo,g=D.g,P=(la,lo)=>[(lo-G.lon0)*G.k,-(la-G.lat0)*FT_PER_DEG];
+  D.mdus=(mdus||[]).map(m=>{const polys=m.polys.map(pl=>pl.map(([la,lo])=>P(la,lo)));const ps=polys.flat();return Object.assign({},m,{polys,x:ps.reduce((a,p)=>a+p[0],0)/ps.length,y:ps.reduce((a,p)=>a+p[1],0)/ps.length})});
+  D.mdus.forEach(m=>{let b=-1,bd=Infinity;for(let i=0;i<g.x.length;i++){if(!g.adj[i].length)continue;const d=(g.x[i]-m.x)**2+(g.y[i]-m.y)**2;if(d<bd){bd=d;b=i}}m.node=b;m.lead=Math.sqrt(bd)})}
+// ---------- imported points ----------
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);if(!lines.length)return[];
+  const delim=(lines[0].match(/\t/g)||[]).length>(lines[0].match(/,/g)||[]).length?'\t':(lines[0].match(/;/g)||[]).length>(lines[0].match(/,/g)||[]).length?';':',';
+  const split=s=>{const o=[];let cur='',q=false;for(const ch of s){if(ch==='"')q=!q;else if(ch===delim&&!q){o.push(cur);cur=''}else cur+=ch}o.push(cur);return o.map(x=>x.trim())};
+  const rawHead=split(lines[0]),head=rawHead.map(h=>h.toLowerCase().replace(/[\s_\-.]/g,''));
+  const latI=head.findIndex(h=>/^(lat|latitude|y|pointy|ycoord|ycoordinate|latdd|latdec|gpslat|lat84)$/.test(h)),lonI=head.findIndex(h=>/^(lon|lng|long|longitude|x|pointx|xcoord|xcoordinate|longdd|londd|gpslon|gpslong|lon84|long84)$/.test(h));
+  let idI=head.findIndex(h=>/^(fulladdress|fulladdr|siteaddress|siteaddr|streetaddress|address|addr|address1|fulladd|location|label)$/.test(h));if(idI<0)idI=head.findIndex(h=>/^(id|name|home|locationid|locid|objectid|fid)$/.test(h));
+  const hasHead=latI>=0&&lonI>=0;const pts=[];
+  for(let li=hasHead?1:0;li<lines.length&&pts.length<20000;li++){const f=split(lines[li]);let lat,lon,id=null;
+    if(hasHead){lat=parseFloat(f[latI]);lon=parseFloat(f[lonI]);if(idI>=0)id=f[idI];var props={};rawHead.forEach((h,i)=>{if(i!==latI&&i!==lonI)props[h]=f[i]})}
+    else{const nums=f.map((s,i)=>({v:parseFloat(s),i,s})).filter(o=>/^-?\d+(\.\d+)?$/.test(o.s));if(nums.length<2)continue;lat=nums[nums.length-2].v;lon=nums[nums.length-1].v;const nn=f.find(s=>s&&!/^-?\d+(\.\d+)?$/.test(s));if(nn)id=nn}
+    if(isFinite(lat)&&isFinite(lon)&&Math.abs(lat)<=90&&Math.abs(lon)<=180)pts.push({id,lat,lon,props:hasHead?props:null})}
+  return pts;
+}
+function buildFromPoints(pts){
+  const lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length,lon0=pts.reduce((s,p)=>s+p.lon,0)/pts.length,k=Math.cos(lat0*Math.PI/180)*FT_PER_DEG;
+  const g=makeGraph();
+  const homes=pts.map((p,i)=>{const x=Math.round((p.lon-lon0)*k*10)/10,y=Math.round(-(p.lat-lat0)*FT_PER_DEG*10)/10;return{id:p.id||('H-'+pad(i+1,4)),x,y,node:addNode(g,x,y),att:30}});
+  const n=g.x.length,CELL=300,grid=new Map(),ck=(a,b)=>a+':'+b;
+  for(let i=0;i<n;i++){const kk=ck(Math.floor(g.x[i]/CELL),Math.floor(g.y[i]/CELL));if(!grid.has(kk))grid.set(kk,[]);grid.get(kk).push(i)}
+  const seen=new Set(),d2=(a,b)=>(g.x[a]-g.x[b])**2+(g.y[a]-g.y[b])**2,K=4;
+  for(let i=0;i<n;i++){const cx=Math.floor(g.x[i]/CELL),cy=Math.floor(g.y[i]/CELL);let cand=[];
+    for(let ring=1;ring<=10;ring++){cand=[];for(let dx=-ring;dx<=ring;dx++)for(let dy=-ring;dy<=ring;dy++){const a=grid.get(ck(cx+dx,cy+dy));if(a)for(const j of a)if(j!==i)cand.push(j)}if(cand.length>=K)break}
+    cand.sort((a,b)=>d2(i,a)-d2(i,b));for(const j of cand.slice(0,K)){const key=Math.min(i,j)*1048576+Math.max(i,j);if(!seen.has(key)){seen.add(key);addEdge(g,i,j)}}}
+  connect(g);
+  let w=0;for(let i=1;i<n;i++)if(g.x[i]<g.x[w])w=i;
+  const co=addNode(g,g.x[w]-400,g.y[w]);addEdge(g,co,w);
+  return finalize(g,homes,co,{lat0,lon0,k},true,`${fmt(homes.length)} imported homes`,null);
+}
+
+// ---------- service areas: every 20 ft cell belongs to the MST (and so the DA) of its nearest home, so areas tile without overlap ----------
+function raster(D,hTerm,terms){
+  const CELL=20,R=200,b=D.bounds,x0=b.minX-R-CELL,y0=b.minY-R-CELL,nx=Math.ceil((b.maxX-b.minX+2*R)/CELL)+3,ny=Math.ceil((b.maxY-b.minY+2*R)/CELL)+3,rc=Math.ceil(R/CELL);
+  const lab=new Int32Array(nx*ny).fill(-1),dist=new Float32Array(nx*ny).fill(Infinity);
+  D.homes.forEach((h,hi)=>{const t=hTerm[hi],ci=Math.floor((h.x-x0)/CELL),cj=Math.floor((h.y-y0)/CELL);
+    for(let j=Math.max(0,cj-rc);j<=Math.min(ny-1,cj+rc);j++)for(let i=Math.max(0,ci-rc);i<=Math.min(nx-1,ci+rc);i++){const cx=x0+(i+.5)*CELL,cy=y0+(j+.5)*CELL,d=(cx-h.x)**2+(cy-h.y)**2;if(d>R*R)continue;const k=j*nx+i;if(d<dist[k]){dist[k]=d;lab[k]=t}}});
+  for(const m of D.mdus||[])for(const pl of m.polys){let a=Infinity,b2=Infinity,c2=-Infinity,d2=-Infinity;for(const p of pl){a=Math.min(a,p[0]);c2=Math.max(c2,p[0]);b2=Math.min(b2,p[1]);d2=Math.max(d2,p[1])}
+    for(let j=Math.max(0,Math.floor((b2-y0)/CELL));j<=Math.min(ny-1,Math.floor((d2-y0)/CELL));j++)for(let i=Math.max(0,Math.floor((a-x0)/CELL));i<=Math.min(nx-1,Math.floor((c2-x0)/CELL));i++)if(inPoly(x0+(i+.5)*CELL,y0+(j+.5)*CELL,pl))lab[j*nx+i]=-1}
+  const daOf=t=>t<0?-1:terms[t].hub.da.i,L=(i,j)=>(i<0||j<0||i>=nx||j>=ny)?-1:lab[j*nx+i];
+  const daSeg=[],mstSeg=[],runs=[];
+  for(let j=0;j<ny;j++){let rs=0;for(let i=0;i<=nx;i++){const a=L(i,j);
+      if(i<nx){const r=L(i+1,j);if(a!==r){const x=x0+(i+1)*CELL;(daOf(a)!==daOf(r)?daSeg:mstSeg).push(x,y0+j*CELL,x,y0+(j+1)*CELL)}
+        const bt=L(i,j+1);if(a!==bt){const y=y0+(j+1)*CELL;(daOf(a)!==daOf(bt)?daSeg:mstSeg).push(x0+i*CELL,y,x0+(i+1)*CELL,y)}}
+      if(i===nx||a!==L(rs,j)){const lr=L(rs,j);if(lr>=0)runs.push([x0+rs*CELL,y0+j*CELL,(i-rs)*CELL,lr]);rs=i}}}
+  return{x0,y0,nx,ny,CELL,lab,daSeg,mstSeg,runs};
+}
+
+// ---------- rear-lot easements: a line behind each row of homes, tied into the streets at the block ends ----------
+function addRear(D,dist){const g=D.g,homes=D.homes,base=g.x.length,rear=new Set(),CELL=300;D.streetN=base;
+  const rn=homes.map(h=>{const ax=g.x[h.node],ay=g.y[h.node];let dx=h.x-ax,dy=h.y-ay,L=Math.hypot(dx,dy);if(L<1){dx=0;dy=1;L=1}
+    return addNode(g,Math.round((h.x+dx/L*dist)*10)/10,Math.round((h.y+dy/L*dist)*10)/10)});
+  const sg=new Map();for(let i=0;i<base;i++){if(!g.adj[i].length)continue;const k=Math.floor(g.x[i]/CELL)+':'+Math.floor(g.y[i]/CELL);if(!sg.has(k))sg.set(k,[]);sg.get(k).push(i)}
+  const nearStreet=(x,y,r)=>{let b=-1,bd=r*r;const cx=Math.floor(x/CELL),cy=Math.floor(y/CELL),R=Math.ceil(r/CELL);for(let i=-R;i<=R;i++)for(let j=-R;j<=R;j++){const a=sg.get((cx+i)+':'+(cy+j));if(a)for(const n of a){const d=(g.x[n]-x)**2+(g.y[n]-y)**2;if(d<bd){bd=d;b=n}}}return b};
+  const crosses=(a,b)=>[0.25,0.5,0.75].some(t=>nearStreet(g.x[a]+(g.x[b]-g.x[a])*t,g.y[a]+(g.y[b]-g.y[a])*t,30)>=0);
+  const link=(a,b)=>{const k=ek(a,b);if(a!==b&&!rear.has(k)){addEdge(g,a,b);rear.add(k)}};
+  const uniq=[...new Set(rn)],rg=new Map();uniq.forEach(n=>{const k=Math.floor(g.x[n]/CELL)+':'+Math.floor(g.y[n]/CELL);if(!rg.has(k))rg.set(k,[]);rg.get(k).push(n)});
+  for(const n of uniq){const cx=Math.floor(g.x[n]/CELL),cy=Math.floor(g.y[n]/CELL),c=[];
+    for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=rg.get((cx+i)+':'+(cy+j));if(a)for(const m of a)if(m!==n){const d=Math.hypot(g.x[m]-g.x[n],g.y[m]-g.y[n]);if(d<=230)c.push([d,m])}}
+    c.sort((p,q)=>p[0]-q[0]);let added=0;for(const [,m] of c){if(added>=3)break;if(crosses(n,m))continue;link(n,m);added++}}
+  const uf=new Map(),find=a=>{while(uf.get(a)!==a){uf.set(a,uf.get(uf.get(a)));a=uf.get(a)}return a};uniq.forEach(n=>uf.set(n,n));
+  for(const k of rear){const a=Math.floor(k/1048576),b=k%1048576;uf.set(find(a),find(b))}
+  const comps=new Map();uniq.forEach(n=>{const r=find(n);if(!comps.has(r))comps.set(r,[]);comps.get(r).push(n)});
+  for(const nodes of comps.values()){let tied=0;
+    for(const n of nodes){if(nodes.length>1&&g.adj[n].length/2>1)continue;const st=nearStreet(g.x[n],g.y[n],320);if(st>=0){link(n,st);tied++}}
+    if(!tied){let best=null;for(const n of nodes){const st=nearStreet(g.x[n],g.y[n],3000);if(st>=0){const d=Math.hypot(g.x[st]-g.x[n],g.y[st]-g.y[n]);if(!best||d<best[0])best=[d,n,st]}}if(best)link(best[1],best[2])}}
+  homes.forEach((h,i)=>{h.node=rn[i];h.att=dist});
+  D.rear=rear;D.rearMode=true;D.rearDist=dist;
+  const edges=[];for(let u=0;u<g.adj.length;u++){const a=g.adj[u];for(let i=0;i<a.length;i+=2)if(a[i]>u)edges.push(u,a[i])}D.edges=edges}
+function nearestStreetNode(D,x,y){const g=D.g,lim=D.streetN||g.x.length;let b=-1,bd=Infinity;for(let i=0;i<lim;i++){if(!g.adj[i].length)continue;const d=(g.x[i]-x)**2+(g.y[i]-y)**2;if(d<bd){bd=d;b=i}}return b}
+// build the design network from the uploaded layers, front or rear lot
+function buildArea(L,rear,rd){let D2;
+  if(L.R)D2=buildReal(L.R);else{D2=buildFromPoints(L.homes.map(h=>({id:h[0],lat:h[1],lon:h[2]})));attachMdus(D2,L.mdus)}
+  D2.name=`${fmt(L.homes.length)} homes`;
+  const G=D2.geo,P2=(la,lo)=>[(lo-G.lon0)*G.k,-(la-G.lat0)*FT_PER_DEG];
+  D2.boundary=L.polys.map(pg=>pg[0].map(([lo,la])=>P2(la,lo)));
+  const fb={minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity},grow=(x,y)=>{fb.minX=Math.min(fb.minX,x);fb.minY=Math.min(fb.minY,y);fb.maxX=Math.max(fb.maxX,x);fb.maxY=Math.max(fb.maxY,y)};
+  D2.boundary.forEach(r=>r.forEach(p=>grow(p[0],p[1])));D2.homes.forEach(h=>grow(h.x,h.y));D2.fitBounds=fb;
+  if(rear&&L.R)addRear(D2,rd);
+  let co=D2.co;if(L.olt){const [ox,oy]=P2(L.olt[0],L.olt[1]);co=nearestStreetNode(D2,ox,oy);D2.oltPt=[ox,oy]}
+  setCO(D2,co);return D2}
+
+// ---------- usable poles ----------
+function setPoles(D,pts){const G=D.geo;D.poles=pts.map(p=>[(p.lon-G.lon0)*G.k,-(p.lat-G.lat0)*FT_PER_DEG]);D.poleGrid=new Map();
+  D.poles.forEach((p,i)=>{const k=Math.floor(p[0]/200)+':'+Math.floor(p[1]/200);if(!D.poleGrid.has(k))D.poleGrid.set(k,[]);D.poleGrid.get(k).push(i)})}
+function poleWithin(D,x,y,r){if(!D.poleGrid)return false;const cx=Math.floor(x/200),cy=Math.floor(y/200);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){const a=D.poleGrid.get((cx+i)+':'+(cy+j));if(a)for(const p of a)if(Math.hypot(D.poles[p][0]-x,D.poles[p][1]-y)<=r)return true}return false}
+function markKey(D,a,b){const k=ek(a,b),w=D.edgeWay?D.edgeWay.get(k):undefined;return w!==undefined?'w'+w:'e'+k}
+function airTest(D,P){const g=D.g,memo=new Map();return(a,b)=>{const k=ek(a,b);let v=memo.get(k);if(v!==undefined)return v;
+  v=(P.rearAir&&!!D.rear&&D.rear.has(k))||P.poleMode==='all'||(P.poleMode==='main'&&!!(D.bb&&D.bb[a]&&D.bb[b]))||!!(D.marks&&D.marks.has(markKey(D,a,b)))||poleWithin(D,(g.x[a]+g.x[b])/2,(g.y[a]+g.y[b])/2,140);memo.set(k,v);return v}}
+
+// ---------- the design engine ----------
+function design(D,arch,P){
+  const t0=performance.now(),g=D.g,homes=D.homes,N=homes.length,maxDrop=P.maxDrop,C=P.costs,isAir=airTest(D,P);
+  const homeAir=h=>{const n=homes[h].node,a=g.adj[n];for(let i=0;i<a.length;i+=2)if(isAir(n,a[i]))return true;return false};
+  if(!D.lc||D.lc.cut!==maxDrop)D.lc={cut:maxDrop,m:new Map()};
+  const local=c=>{let r=D.lc.m.get(c);if(!r){r=sparseDij(g,c,maxDrop,null);D.lc.m.set(c,r)}return r};
+  const cap=Math.max(1,arch.termPorts-P.spare);
+  // 1. MST areas: walk homes in network order, grow each area while one terminal location keeps every drop within the limit
+  const order=homes.map((h,i)=>i).sort((a,b)=>D.dfs[homes[a].node]-D.dfs[homes[b].node]||homes[a].y-homes[b].y||homes[a].x-homes[b].x);
+  function best(group){const cands=[...new Set(group.map(h=>homes[h].node))];let b=null;
+    for(const c of cands){const L=local(c);let mx=0,sum=0,ok=true;for(const h of group){const d=L.dist.get(homes[h].node);if(d===undefined){ok=false;break}const dd=d+homes[h].att;if(dd>mx)mx=dd;sum+=dd}
+      if(ok&&(!b||mx<b.mx-1e-6||(Math.abs(mx-b.mx)<1e-6&&sum<b.sum)))b={node:c,mx,sum}}return b}
+  const groups=[];let cur=[],cb=null;
+  for(const h of order){
+    if(!cur.length){cur=[h];cb=best(cur)||{node:homes[h].node,mx:homes[h].att};continue}
+    if(cur.length<cap){const tr=cur.concat(h),b=best(tr);if(b&&b.mx<=maxDrop){cur=tr;cb=b;continue}}
+    groups.push({homes:cur,node:cb.node,mx:cb.mx});cur=[h];cb=best(cur)||{node:homes[h].node,mx:homes[h].att}}
+  if(cur.length)groups.push({homes:cur,node:cb.node,mx:cb.mx});
+  // 2. splitter groups, then distribution areas of whole splitters up to the DA limit
+  const terms=groups.sort((a,b)=>D.dfs[a.node]-D.dfs[b.node]);
+  const hubG=[];let hc=[],hh=0;
+  for(const t of terms){const full=arch.central?(hh+t.homes.length>arch.hubHomes):(hc.length>=arch.hubSplit);if(hc.length&&full){hubG.push(hc);hc=[];hh=0}hc.push(t);hh+=t.homes.length}
+  if(hc.length)hubG.push(hc);
+  const das=[],daOf=[];{let cd=null;hubG.forEach((ts,i)=>{const h=ts.reduce((a,t)=>a+t.homes.length,0);if(!cd||cd.homes+h>P.daMax){cd={i:das.length,homes:0,hubs:[],sites:[]};das.push(cd)}cd.homes+=h;daOf[i]=cd})}
+  const fibOf=t=>arch.termSplit>1?1:t.homes.length;
+  const useH=!!(P.hmode&&D.bbList&&D.bbList.length);
+  const siteCap=arch.central?1:SITE_CAP,siteCost=(arch.central?FIX.cabinet:FIX.closure)+HH.vault.cost;
+  const sites=[],siteAt=new Map();
+  const hubs=hubG.map((ts,hi)=>{
+    const da=daOf[hi],homesN=ts.reduce((a,t)=>a+t.homes.length,0);
+    const pon=arch.central?Math.ceil(homesN/arch.hubSplit):Math.ceil(ts.length/arch.hubSplit);
+    const targets=new Set(ts.map(t=>t.node));
+    let wx=0,wy=0,ws=0;for(const t of ts){const w=fibOf(t);wx+=w*g.x[t.node];wy+=w*g.y[t.node];ws+=w}const cx=wx/ws,cy=wy/ws;
+    let cands;
+    if(useH)cands=D.bbList.map(n=>({n,d:(g.x[n]-cx)**2+(g.y[n]-cy)**2})).sort((a,b)=>a.d-b.d).slice(0,10).map(o=>o.n);
+    else{cands=[...targets];if(cands.length>10)cands=cands.map(c=>({c,d:(g.x[c]-cx)**2+(g.y[c]-cy)**2})).sort((a,b)=>a.d-b.d).slice(0,8).map(o=>o.c)}
+    const open=st=>st&&st.da===da&&st.hubs.length<siteCap;
+    for(const st of da.sites)if(open(st)&&!cands.includes(st.node))cands.push(st.node);
+    let b=null;
+    for(const c of cands){const res=sparseDij(g,c,Infinity,targets);let ff=pon*D.dCO[c],ok=true;for(const t of ts){const d=res.dist.get(t.node);if(d===undefined){ok=false;break}ff+=fibOf(t)*d}if(!ok)continue;
+      const cost=ff*FIBER_FT_COST+(open(siteAt.get(c))?0:siteCost);if(!b||cost<b.cost)b={c,cost,res}}
+    let st=siteAt.get(b.c);if(!open(st)){st={node:b.c,hubs:[],da};sites.push(st);da.sites.push(st);siteAt.set(b.c,st)}
+    const hub={i:hi,node:b.c,res:b.res,terms:ts,homes:homesN,pon,feedFt:D.dCO[b.c],site:st,da};st.hubs.push(hub);da.hubs.push(hub);return hub});
+  sites.sort((a,b)=>D.dfs[a.node]-D.dfs[b.node]).forEach((s,i)=>{s.id='PSL-'+pad(i+1,2);s.homes=s.hubs.reduce((a,h)=>a+h.homes,0);s.pon=s.hubs.reduce((a,h)=>a+h.pon,0)});
+  das.forEach(d=>{d.id='DA-'+pad(d.i+1,2)});
+  const E=new Map();const acc=(a,b,f,d)=>{const lo=Math.min(a,b),hi=Math.max(a,b),k=lo*1048576+hi;let e=E.get(k);if(!e){e={a:lo,b:hi,f:0,d:0};E.set(k,e)}e.f+=f;e.d+=d};
+  // daisy chain: F1 leaves the OLT, visits the nearest DA, serves its splitter sites, then moves on to the next nearest DA
+  const chainPos=new Map(),chainEdges=[],chainCum=[0];let chainSeq=null,chainOrder=[];
+  if(P.chain&&sites.length){
+    chainSeq=[];let cur=D.co;chainPos.set(D.co,0);const remDA=new Set(das.filter(d=>d.sites.length));
+    const step=rem=>{const r=sparseDij(g,cur,Infinity,new Set([...rem].map(s=>s.node)));let b=null,bd=Infinity;for(const s of rem){const d=r.dist.get(s.node);if(d!==undefined&&d<bd){bd=d;b=s}}const path=[b.node];let x=b.node;while(x!==cur){x=r.par.get(x);path.push(x)}path.reverse();return{b,path}};
+    while(remDA.size){const da=step(new Set([...remDA].flatMap(d=>d.sites))).b.da;remDA.delete(da);chainOrder.push(da);const rem=new Set(da.sites);
+      while(rem.size){const {b,path}=step(rem);
+        for(let i=1;i<path.length;i++){chainEdges.push([path[i-1],path[i]]);chainCum.push(chainCum[chainCum.length-1]+Math.hypot(g.x[path[i]]-g.x[path[i-1]],g.y[path[i]]-g.y[path[i-1]]));if(!chainPos.has(path[i]))chainPos.set(path[i],chainEdges.length)}
+        b.chainIdx=chainEdges.length;b.chainFt=chainCum[b.chainIdx];chainSeq.push(b);rem.delete(b);cur=b.node}}
+    const nodesC=[D.co].concat(chainEdges.map(e=>e[1])),dif=new Float64Array(chainEdges.length+1);
+    for(const s of chainSeq){dif[0]+=s.pon;dif[s.chainIdx]-=s.pon;s.pathCO=nodesC.slice(0,s.chainIdx+1).reverse()}
+    let run2=0;chainEdges.forEach((e,k)=>{run2+=dif[k];if(run2>0)acc(e[0],e[1],run2,0)});
+    chainSeq.forEach((s,i)=>{s.id='PSL-'+pad(i+1,2)});chainOrder.forEach((d,i)=>{d.id='DA-'+pad(i+1,2);d.order=i+1});
+    das.sort((a,b)=>(a.order||99)-(b.order||99));sites.sort((a,b)=>a.chainIdx-b.chainIdx);
+  }
+  const nearestChain=src=>{const dist=new Map([[src,0]]),par=new Map([[src,-1]]),done=new Set(),h=new Heap();h.push(0,src);
+    while(h.size){const d=h.d[0],u=h.pop();if(done.has(u))continue;done.add(u);if(chainPos.has(u)){const p=[u];let x=u;while(x!==src){x=par.get(x);p.push(x)}return{node:u,d,path:p}}
+      const a=g.adj[u];for(let i=0;i<a.length;i+=2){const v=a[i],nd=d+a[i+1],c=dist.get(v);if(c===undefined||nd<c){dist.set(v,nd);par.set(v,u);h.push(nd,v)}}}return null};
+  // 3. route cables and count fibers on every street segment
+  const hTerm=new Int32Array(N),hDrop=new Float64Array(N),hLoss=new Float64Array(N),hLen=new Float64Array(N),hPort=new Int16Array(N),hDropPath=new Array(N);
+  const tList=[],hw=hubs.length>99?3:2;
+  for(const hub of hubs){
+    hub.id='SPL-'+pad(hub.i+1,hw);
+    if(chainSeq){hub.feedFt=hub.site.chainFt;hub.path=hub.site.pathCO}
+    else{let u=hub.node;const fp=[u];while(u!==D.co){const p=D.pCO[u];acc(u,p,hub.pon,0);u=p;fp.push(u)}hub.path=fp}
+    hub.terms.forEach((t,k)=>{
+      t.i=tList.length;t.hub=hub;t.id=`MST-${pad(hub.i+1,hw)}.${k+1}`;t.color=k%12;
+      t.hubFt=hub.res.dist.get(t.node);const w=fibOf(t);let v=t.node;const tp=[v];while(v!==hub.node){const p=hub.res.par.get(v);acc(v,p,0,w);v=p;tp.push(v)}t.path=tp;
+      const L=local(t.node);t.maxDrop=0;
+      t.homes.forEach((h,pi)=>{const home=homes[h];const dn=L.dist.get(home.node);const net=dn===undefined?Math.hypot(g.x[home.node]-g.x[t.node],g.y[home.node]-g.y[t.node]):dn;
+        const drop=net+home.att;hTerm[h]=t.i;hDrop[h]=drop;hPort[h]=pi+1;t.maxDrop=Math.max(t.maxDrop,drop);
+        const dp=[home.node];if(dn!==undefined){let x=home.node;while(x!==t.node){x=L.par.get(x);dp.push(x)}}else dp.push(t.node);hDropPath[h]=dp;
+        const len=hub.feedFt+t.hubFt+drop,km=len/3280.84,spl=3+Math.floor(km/3);
+        hLen[h]=len;hLoss[h]=km*0.35+SL[arch.hubSplit]+SL[arch.termSplit]+4*0.5+spl*0.1});
+      tList.push(t)})}
+  // MDU stubs: reserved feeder fibers from the OLT, coiled in an entry handhole, not spliced
+  const mduHH=(D.mdus||[]).filter(m=>m.node>=0).map(m=>{const fib=mduFibers(m.u),id=m.id.replace('MDU','MHH');
+    if(chainSeq){const nc=nearestChain(m.node);const pos=chainPos.get(nc.node);for(let k=0;k<pos;k++)acc(chainEdges[k][0],chainEdges[k][1],fib,0);for(let i=1;i<nc.path.length;i++)acc(nc.path[i-1],nc.path[i],fib,0);return{id,m,node:m.node,fib,feedFt:chainCum[pos]+nc.d}}
+    let u=m.node;for(let guard=0;u!==D.co&&guard<1e6;guard++){const p=D.pCO[u];if(p<0)break;acc(u,p,fib,0);u=p}return{id,m,node:m.node,fib,feedFt:D.dCO[m.node]}});
+  const mduFib=mduHH.reduce((a,h)=>a+h.fib,0);
+  das.forEach(d=>{const hs=d.hubs.flatMap(h=>h.terms.flatMap(t=>t.homes));const cx=hs.reduce((a,h)=>a+homes[h].x,0)/hs.length,cy=hs.reduce((a,h)=>a+homes[h].y,0)/hs.length;let bh=hs[0],bd=Infinity;for(const h of hs){const dd=(homes[h].x-cx)**2+(homes[h].y-cy)**2;if(dd<bd){bd=dd;bh=h}}d.lx=homes[bh].x;d.ly=homes[bh].y;d.mst=d.hubs.reduce((a,h)=>a+h.terms.length,0);d.pon=d.hubs.reduce((a,h)=>a+h.pon,0)});
+  const ras=raster(D,hTerm,tList);
+  // flowerpots only where needed: an underground home across the street from its MST, or beyond direct reach of it.
+  // Neighbouring homes on the same side share one; their drops snap through it.
+  const pots=[],hPot=new Int32Array(N).fill(-1),hAir=new Uint8Array(N);
+  for(let h=0;h<N;h++)hAir[h]=homeAir(h)?1:0;
+  for(const t of tList){
+    const ref=t.homes.find(h=>homes[h].node===t.node);const side=h=>ref===undefined?1:(homes[h].x-g.x[homes[h].node])*(homes[ref].x-g.x[homes[ref].node])+(homes[h].y-g.y[homes[h].node])*(homes[ref].y-g.y[homes[ref].node]);
+    const left=t.homes.filter(h=>!hAir[h]&&(hDrop[h]>P.reach||(!D.rearMode&&side(h)<0)));while(left.length){const h=left.shift(),A=homes[h],an=A.node;const grp=[h];
+      const near=left.map(o=>{const B=homes[o],bn=B.node;return{o,d:(B.x-A.x)**2+(B.y-A.y)**2,same:(A.x-g.x[an])*(B.x-g.x[bn])+(A.y-g.y[an])*(B.y-g.y[bn])>0}}).filter(c=>c.same&&c.d<=180*180).sort((a,b)=>a.d-b.d).slice(0,3);
+      for(const c of near){grp.push(c.o);left.splice(left.indexOf(c.o),1)}
+      const sx=grp.reduce((a,x)=>a+g.x[homes[x].node],0)/grp.length,sy=grp.reduce((a,x)=>a+g.y[homes[x].node],0)/grp.length,hx=grp.reduce((a,x)=>a+homes[x].x,0)/grp.length,hy=grp.reduce((a,x)=>a+homes[x].y,0)/grp.length;
+      grp.forEach(x=>hPot[x]=pots.length);pots.push({id:'FP-'+pad(pots.length+1,4),x:sx+(hx-sx)*0.3,y:sy+(hy-sy)*0.3,homes:grp,t})}}
+  // 4. size cables
+  // F1 feeder and F2 distribution are separate cables. F1 on the backbone has a minimum size; F2 never exceeds its cap (parallel cables if needed)
+  const fitC=(n,cap,min)=>{if(n<=0)return[];const SZ=STD.filter(z=>z<=cap),MX=SZ[SZ.length-1];const req=Math.max(n,Math.ceil(n*(1+P.cableSpare)),min||0);const one=SZ.find(z=>z>=req);if(one)return[one];const o=[];let left=req;while(left>0){const t=Math.min(left,MX);o.push(SZ.find(z=>z>=t));left-=t}return o};
+  const sizeFt={},kindFt={f:0,d:0};let routeFt=0,maxF=0,maxD=0,multi=0;
+  let airFt=0,ugFt=0,rearFt=0,airEstFt=0;
+  for(const e of E.values()){const len=Math.hypot(g.x[e.a]-g.x[e.b],g.y[e.a]-g.y[e.b]);
+    e.air=isAir(e.a,e.b);if(e.air){airFt+=len;if(!(D.poleGrid&&poleWithin(D,(g.x[e.a]+g.x[e.b])/2,(g.y[e.a]+g.y[e.b])/2,140)))airEstFt+=len}else ugFt+=len;if(D.rear&&D.rear.has(ek(e.a,e.b)))rearFt+=len;
+    const onBB=D.bb&&D.bb[e.a]&&D.bb[e.b];
+    const cf=fitC(e.f,432,onBB?P.f1Min:0),cd=fitC(e.d,P.f2Max,0);
+    e.cables=cf.concat(cd);e.kinds=cf.map(()=>'f').concat(cd.map(()=>'d'));e.size=Math.max(...e.cables);e.cnt=e.cables.length;e.len=len;if(cd.length>1)multi++;
+    for(const z of e.cables)sizeFt[z]=(sizeFt[z]||0)+len;kindFt.f+=cf.length*len;kindFt.d+=cd.length*len;routeFt+=len;maxF=Math.max(maxF,e.f);maxD=Math.max(maxD,e.d)}
+  const f1Max=Math.max(0,...[...E.values()].flatMap(e=>e.cables.filter((z,k)=>e.kinds[k]==='f'))),f2Max=Math.max(0,...[...E.values()].flatMap(e=>e.cables.filter((z,k)=>e.kinds[k]==='d')));
+  // 5. splice points and handholes
+  const adjC=new Map();const addA=(n,e)=>{let a=adjC.get(n);if(!a)adjC.set(n,a=[]);a.push(e)};for(const e of E.values()){addA(e.a,e);addA(e.b,e)}
+  const ST=new Map(),rank={pull:0,term:1,branch:2,site:3};
+  const mk=(node,type)=>{let s=ST.get(node);if(!s){s={node,type,sp:{feed:0,out:0,branch:0,taper:0,tap:0},terms:[]};ST.set(node,s)}else if(rank[type]>rank[s.type])s.type=type;return s};
+  for(const st of sites){const s=mk(st.node,'site');(s.siteList=s.siteList||[]).push(st);s.site=s.site||st;for(const h of st.hubs){s.sp.feed+=h.pon;s.sp.out+=h.terms.reduce((a,t)=>a+fibOf(t),0)}}
+  for(const t of tList){const s=mk(t.node,'term');s.terms.push(t);s.sp.tap+=fibOf(t)}
+  for(const [n,es] of adjC){if(n===D.co)continue;const s0=ST.get(n);if(s0&&s0.type==='site')continue;
+    const f=es.map(e=>e.f+e.d).sort((a,b)=>b-a);
+    if(es.length>=3){const s=mk(n,'branch');s.sp.branch+=f.slice(2).reduce((a,b)=>a+b,0)}
+    else if(es.length===2&&es[0].size!==es[1].size){const s=mk(n,'branch');s.sp.taper+=Math.min(f[0],f[1])}}
+  const struct=new Set([...ST.keys(),D.co,...mduHH.map(h=>h.node)]),visited=new Set(),pulls=[];
+  for(const s0 of [...struct]){const es=adjC.get(s0);if(!es)continue;for(const e0 of es){if(visited.has(e0))continue;let u=s0,cur=e0,run=0;
+    for(let guard=0;guard<200000;guard++){visited.add(cur);const v=cur.a===u?cur.b:cur.a;run+=cur.len;if(struct.has(v))break;
+      if(cur.air)run=0;else if(run>=P.pull){pulls.push(v);run=0}const nx=(adjC.get(v)||[]).find(x=>x!==cur&&!visited.has(x));if(!nx)break;u=v;cur=nx}}}
+  pulls.forEach(n=>mk(n,'pull'));
+  const structs=[...ST.values()].sort((a,b)=>D.dfs[a.node]-D.dfs[b.node]);let hn=0,slackFt=0;
+  for(const s of structs){s.hh=s.type==='site'?'vault':s.type==='branch'?'hh36':'hh30';s.id=s.type==='site'?s.siteList.map(x=>x.id).join('/'):'HH-'+pad(++hn,3);
+    s.total=s.sp.feed+s.sp.out+s.sp.branch+s.sp.taper+s.sp.tap;const es=adjC.get(s.node)||[];s.air=es.length>0&&es.every(e=>e.air);s.sizes=[...new Set(es.flatMap(e=>e.cables))].sort((a,b)=>b-a);
+    const sl=SLACK[s.type]||0;if(sl&&s.sizes.length){sizeFt[s.sizes[0]]+=sl;slackFt+=sl}}
+  mduHH.forEach(h=>{const es=adjC.get(h.node)||[];h.sizes=[...new Set(es.flatMap(e=>e.cables))].sort((a,b)=>b-a);if(h.sizes.length){sizeFt[h.sizes[0]]+=100;slackFt+=100}});
+  sites.forEach(st=>{st.struct=ST.get(st.node)});
+  const cnt={vault:0,hh36:0,hh30:0};structs.forEach(s=>cnt[s.hh]++);
+  const nPull=structs.filter(s=>s.type==='pull').length,midspan=structs.filter(s=>s.type==='branch').length,splices=structs.reduce((a,s)=>a+s.total,0);
+  // 6. losses and checks
+  const budget=BUDGET[P.budget].db;let worst=0,worstH=0;for(let h=0;h<N;h++)if(hLoss[h]>worst){worst=hLoss[h];worstH=h}
+  let dropViol=0,marginLow=0,dropFt=0;for(let h=0;h<N;h++){if(hDrop[h]>maxDrop+0.5)dropViol++;if(budget-hLoss[h]<MARGIN)marginLow++;dropFt+=hDrop[h]}
+  hubs.forEach(hub=>{hub.worst=0;hub.terms.forEach(t=>t.homes.forEach(h=>{hub.worst=Math.max(hub.worst,hLoss[h])}))});
+  const mstMax=tList.reduce((a,t)=>Math.max(a,t.homes.length),0),daMaxH=das.reduce((a,d)=>Math.max(a,d.homes),0);
+  // 7. OLT at the central office
+  const pon=hubs.reduce((a,h)=>a+h.pon,0),oltCards=Math.ceil(pon/16);
+  const coPorts=(adjC.get(D.co)||[]).reduce((a,e)=>a+e.size*e.cnt,0),odf=Math.max(1,Math.ceil(coPorts/144));
+  // 8. bill of materials
+  const ugStructs=structs.filter(s=>!s.air),airStructs=structs.filter(s=>s.air),cntU={vault:0,hh36:0,hh30:0};ugStructs.forEach(s=>cntU[s.hh]++);
+  let polesUsed=0;
+  if(D.poles&&D.poles.length&&airFt>0){const gm=new Map(),C2=200;for(const e of E.values())if(e.air){const mx=(g.x[e.a]+g.x[e.b])/2,my=(g.y[e.a]+g.y[e.b])/2,k=Math.floor(mx/C2)+':'+Math.floor(my/C2);if(!gm.has(k))gm.set(k,[]);gm.get(k).push([mx,my])}
+    for(const q of D.poles){const cx=Math.floor(q[0]/C2),cy=Math.floor(q[1]/C2);let hit=false;for(let i=-1;i<=1&&!hit;i++)for(let j=-1;j<=1&&!hit;j++){const a=gm.get((cx+i)+':'+(cy+j));if(a)hit=a.some(m=>Math.hypot(m[0]-q[0],m[1]-q[1])<=140)}if(hit)polesUsed++}}
+  const poles=polesUsed+(airEstFt>0?Math.ceil(airEstFt/Math.max(50,C.span))+1:0),items=[];
+  const add=(g2,item,qty,unit,uc)=>{if(qty>0)items.push({g:g2,item,qty,unit,uc})};
+  STD.forEach(s=>{if(sizeFt[s])add('pass',`${s}F loose-tube fiber cable (incl. slack)`,Math.ceil(sizeFt[s]),'ft',CABLE_COST[s])});
+  add('pass','Underground placement, directional bore',Math.ceil(ugFt),'ft',C.ug);
+  add('pass','Aerial placement on existing poles, strand and lash',Math.ceil(airFt),'ft',C.aerial);
+  add('pass','1.25 in HDPE duct',Math.ceil(ugFt),'ft',FIX.duct);
+  add('pass','Tracer wire and locate markers',Math.ceil(ugFt),'ft',FIX.tracer);
+  add('pass',HH.vault.label+' (splitter sites)',cntU.vault,'ea',HH.vault.cost);
+  add('pass',HH.hh36.label+' (branch and taper splices)',cntU.hh36,'ea',HH.hh36.cost);
+  add('pass',HH.hh30.label+' (MSTs and pull points)',cntU.hh30,'ea',HH.hh30.cost);
+  add('pass','Aerial splice closure and pole hardware',airStructs.filter(s=>s.type==='site'||s.type==='branch').length,'ea',FIX.aerialClosure);
+  add('pass','Pole-mounted MST bracket',airStructs.filter(s=>s.type==='term').length,'ea',FIX.poleBracket);
+  add('pass',HH.mdu.label+` (${mduFib} fibers reserved, coiled)`,mduHH.length,'ea',HH.mdu.cost);
+  add('pass',arch.central?'144-home distribution cabinet':`Primary splitter closure (up to ${SITE_CAP} splitters)`,sites.length,'ea',arch.central?FIX.cabinet:FIX.closure);
+  add('pass','Mid-span splice closure',midspan,'ea',FIX.midspan);
+  add('pass',`1:${arch.hubSplit} primary splitter`,pon,'ea',SPLITTER_COST[arch.hubSplit]);
+  add('pass',arch.termSplit>1?`${arch.termPorts}-port MST`:'8-port pass-through terminal',tList.length,'ea',arch.termSplit>1?TERM_COST[arch.termPorts]:TERM_COST.pass);
+  if(arch.termSplit>1)add('pass',`1:${arch.termSplit} secondary splitter (in MST)`,tList.length,'ea',SPLITTER_COST[arch.termSplit]);
+  add('pass','Fusion splices',splices,'ea',C.splice);
+  add('pass','Flowerpot, drop access where needed',pots.length,'ea',C.pot);
+  const rockFt=Math.round(ugFt*P.rock),pits=ugStructs.length+mduHH.length+pots.length;
+  add('permit',`Rock adder, boring (${Math.round(P.rock*100)}% of bore footage)`,rockFt,'ft',C.rock);
+  add('permit','Rock adder, handhole and flowerpot excavation',Math.round(pits*P.rock),'ea',C.rockHH);
+  add('permit',`Pole make-ready (~1 pole per ${C.span} ft of aerial)`,poles,'pole',C.mr);
+  add('permit','Pole attachment applications',poles,'pole',FIX.poleApp);
+  add('permit','Right-of-way permit applications (1 per 1,000 ft)',Math.ceil(routeFt/1000),'ea',C.permit);
+  add('permit','Right-of-way inspection and permit fees',Math.ceil(routeFt),'ft',C.row);
+  add('permit','Traffic control plans (1 per DA)',das.length,'ea',C.tcp);
+  add('co','OLT line card, 16 PON ports',oltCards,'ea',FIX.oltCard);
+  add('co','PON optic (SFP)',pon,'ea',C.pon);
+  add('co','144-port ODF patch panel',odf,'ea',FIX.odf);
+  add('conn','Drop cable, preconnectorized',Math.ceil(dropFt),'ft',C.dropFt);
+  add('conn','ONT (customer unit)',N,'ea',FIX.ont);
+  add('conn','Drop install and ONT turn-up',N,'home',C.dropInst);
+  items.forEach(it=>it.ext=it.qty*it.uc);
+  const sum=g2=>items.filter(i=>i.g===g2).reduce((a,i)=>a+i.ext,0);
+  const permitCost=sum('permit'),passCost=sum('pass')+sum('co')+permitCost,connCost=sum('conn');
+  const offBB=useH?sites.filter(s=>!D.bb[s.node]).length:0;
+  return{polesUsed,rearFt,airFt,ugFt,poles,cntU,hAir,isAir,chain:!!chainSeq,chainOrder,pots,hPot,permitCost,rockFt,kindFt,maxD,f1Max,f2Max,ras,mduHH,mduFib,arch,P,N,useH,terms:tList,hubs,sites,das,structs,cnt,nPull,midspan,splices,slackFt,E,hTerm,hDrop,hLoss,hLen,hPort,hDropPath,routeFt,maxF,multi,sizeFt,pon,oltCards,odf,coPorts,worst,worstH,budget,dropViol,marginLow,dropFt,items,passCost,connCost,offBB,mstMax,daMaxH,cap,
+    perPass:passCost/N,perConn:(passCost+connCost)/N,ms:performance.now()-t0,pass:dropViol===0&&marginLow===0};
+}
+
+// ---------- state ----------
+let D=null,S=null,CMP=null,ALT=null,ALTC=null,ALTP=null,markMode=false,seed=7,archId='8x8';
+const view={s:1,tx:0,ty:0};let hover=null,pinned=null;
+const cv=$('#map'),box=$('#mapbox'),tip=$('#tip');
+$('#arch').innerHTML=ARCH.map(a=>`<option value="${a.id}">${a.label}</option>`).join('');
+$('#budget').innerHTML=Object.entries(BUDGET).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+function params(){const num=(id,d)=>{const v=parseFloat($(id).value);return isFinite(v)&&v>=0?v:d};
+  return{rearAir:$('#rearPlant').value==='air',chain:$('#chain').value==='1',target:num('#target',2200),rock:+$('#rock').value/100,f1Min:+$('#f1Min').value,f2Max:+$('#f2Max').value,maxDrop:+$('#maxDrop').value,spare:+$('#spare').value,daMax:+$('#daMax').value,cableSpare:+$('#cableSpare').value/100,poleMode:$('#poleMode').value,reach:num('#reach',250),pull:+$('#pull').value,budget:$('#budget').value,hmode:$('#hmode').value==='1',
+    costs:{aerial:num('#cAerial',4),ug:num('#cUG',16),dropFt:num('#cDropFt',.55),dropInst:num('#cDropInst',225),pon:num('#cPon',180),splice:num('#cSplice',25),rock:num('#cRock',18),rockHH:num('#cRockHH',400),permit:num('#cPermit',500),row:num('#cRow',1),tcp:num('#cTcp',1500),pot:num('#cPot',240),mr:num('#cMR',750),span:num('#cSpan',175)}}}
+function syncOutputs(){$('#maxDropV').textContent=$('#maxDrop').value+' ft';$('#cableSpareV').textContent=$('#cableSpare').value+'%';$('#pullV').textContent=$('#pull').value+' ft';$('#daMaxV').textContent=$('#daMax').value+' homes';$('#rockV').textContent=$('#rock').value+'%'}
+
+function run(refit){
+  if(!D)return;
+  syncOutputs();const P=params();const arch=ARCH.find(a=>a.id===archId);
+  S=design(D,arch,P);if(refit)fit();pinned=null;hover=null;tip.hidden=true;
+  renderAll();draw();attribution();bmNote();
+  CMP=null;ALT=null;renderCompare();clearTimeout(run.t);
+  run.t=setTimeout(()=>{CMP=ARCH.map(a=>a.id===archId?S:design(D,a,P));ALT=D.bbList&&D.bbList.length?design(D,arch,Object.assign({},P,{hmode:!P.hmode})):null;ALTC=design(D,arch,Object.assign({},P,{chain:!P.chain}));ALTP=P.poleMode==='all'?null:design(D,arch,Object.assign({},P,{poleMode:'all'}));renderCompare()},40);
+}
+let deb;function rerun(){clearTimeout(deb);deb=setTimeout(()=>run(false),120)}
+
+// ---------- results ----------
+const typeName={site:'Primary splitter site',branch:'Branch splice',term:'MST tap',pull:'Pull point'};
+function spliceDetail(s){const p=s.sp,o=[];if(p.feed)o.push(`${p.feed} feeder to splitter`);if(p.out)o.push(`${p.out} splitter outputs`);if(p.branch)o.push(`${p.branch} branch`);if(p.taper)o.push(`${p.taper} taper`);if(p.tap)o.push(`${p.tap} MST tap`);return o.join(' · ')||'none, pull and slack only'}
+function renderAll(){
+  const s=S,b=s.budget,minM=b-s.worst,mu=D.mdus.reduce((a,m)=>a+m.u,0);
+  $('#runstat').innerHTML=`<b>${fmt(s.N)} homes</b> designed in <b>${fmt(s.ms,0)} ms</b><br>${esc(D.name)} · ${s.arch.label} · ${s.useH?'H backbone':'free placement'}`;
+  $('#maptitle').innerHTML=`<b>${esc(s.arch.label)}</b> · ${D.rearMode?'rear lot':'front lot'} · ${s.useH?'H backbone':'free placement'} · ${s.chain?'daisy-chained F1':'home-run F1'} · ${s.das.length} DAs · ${fmt(s.terms.length)} MSTs${D.mdus.length?` · ${D.mdus.length} MDU${D.mdus.length>1?"s":""} excluded`:''}`;
+  const tiles=[
+    ['Homes passed',fmt(s.N),D.mdus.length?`single-family · ${D.mdus.length} MDU${D.mdus.length>1?"s":""} (~${fmt(mu)} units) excluded`:D.imported?'imported locations':'generated lots'],
+    ['Distribution areas',fmt(s.das.length),`largest ${s.daMaxH} homes · limit ${s.P.daMax}`],
+    ['MST areas',fmt(s.terms.length),`largest ${s.mstMax} homes · limit ${s.cap}`],
+    ['Primary splitters',`${fmt(s.pon)} × 1:${s.arch.hubSplit}`,`in ${fmt(s.sites.length)} shared ${s.arch.central?'cabinets':'closures'}`],
+    ['OLT',`${s.oltCards} card${s.oltCards>1?'s':''}`,`${s.pon} of ${s.oltCards*16} PON ports used`],
+    ['Cable route',fmt(s.routeFt/5280,2)+' mi',`${fmt(s.routeFt)} ft · largest ${fmt(Math.max(...Object.keys(s.sizeFt).map(Number)))}F`],
+    ['Fusion splices',fmt(s.splices),`${fmt(s.sites.length+s.midspan)} splice closures + MST taps`],
+    ['Aerial / underground',`${fmt(s.airFt/5280,2)} / ${fmt(s.ugFt/5280,2)} mi`,s.airFt?`${fmt(s.poles)} poles with make-ready${s.polesUsed?` (${fmt(s.polesUsed)} from your file)`:''} · ${s.P.rearAir&&D.rearMode?'rear-lot poles assumed, confirm in field':s.P.poleMode==='data'?'confirmed poles':'what-if assumption'}`:'no confirmed usable poles yet'],
+    ['Handholes',fmt(s.cntU.vault+s.cntU.hh36+s.cntU.hh30+s.mduHH.length),`${s.cntU.vault} vaults · ${s.cntU.hh36} 24×36 · ${s.cntU.hh30} 17×30${s.mduHH.length?` · ${s.mduHH.length} MDU entry`:''}`],
+    ['Worst-case loss',s.worst.toFixed(1)+' dB',`<span style="color:var(--${minM>=MARGIN?'good':minM>=0?'warn':'crit'})">${minM.toFixed(1)} dB margin</span> on ${BUDGET[s.P.budget].label.split(' (')[0]}`],
+    ['Flowerpots',fmt(s.pots.length),`only where needed: ${fmt(s.pots.reduce((a,p)=>a+p.homes.length,0))} homes across the street or past ${s.P.reach} ft`],
+    ['Rock and permits',money(s.permitCost),`${money(s.permitCost/s.N)} per home · ${fmt(s.rockFt)} ft of rock bore`],
+    ['Cost per home passed',money(s.perPass),`${money(s.passCost)} incl. rock, permits and OLT`],
+    ['Cost per home connected',money(s.perConn),'adds drop, ONT and install']];
+  $('#kpis').innerHTML=tiles.map(t=>`<div class="kpi"><div class="eyebrow">${t[0]}</div><div class="v">${t[1]}</div><div class="d">${t[2]}</div></div>`).join('');
+  const lng=s.terms.reduce((a,t)=>Math.max(a,t.maxDrop),0);
+  const drc=[
+    ['good',`MST areas ≤ ${s.cap} homes`,`Largest MST area serves ${s.mstMax} homes`],
+    [s.daMaxH<=s.P.daMax?'good':'crit',`DA boundaries ≤ ${s.P.daMax} homes`,`${s.das.length} DAs, largest ${s.daMaxH} homes`],
+    [s.dropViol?'crit':'good',`Drop length ≤ ${s.P.maxDrop} ft`,s.dropViol?`${s.dropViol} homes exceed the limit; raise the limit or check isolated homes`:`Longest drop ${fmt(lng)} ft`],
+    [s.marginLow?(s.worst>b?'crit':'warn'):'good',`Optical margin ≥ ${MARGIN} dB`,s.marginLow?`${fmt(s.marginLow)} homes below target; try a lower split ratio or a higher PON class`:`Lowest margin ${minM.toFixed(1)} dB`],
+    s.useH?[s.offBB?'warn':'good','Splitters on the main-road backbone',s.offBB?`${s.offBB} sites off the backbone`:`All ${s.sites.length} sites on main roads; feeder stays on the backbone`]:['warn','Splitters on the main-road backbone',D.bbList&&D.bbList.length?'Free placement selected':'No main-road data for imported points; splitters placed freely'],
+    [D.mdus.length?'warn':'good','MDUs handled separately',D.mdus.length?`${D.mdus.length} complexes (~${fmt(mu)} units) not designed; ${s.mduFib} feeder fibers reserved in ${s.mduHH.length} MDU entry handholes`:'No MDUs found'],
+    ['good',`Pull distance ≤ ${s.P.pull} ft`,`${s.nPull} pull handhole${s.nPull===1?'':'s'} added on long runs`],
+    [s.f2Max<=s.P.f2Max?'good':'crit',`F2 distribution under 72F (max ${s.P.f2Max}F)`,`Largest F2 ${s.f2Max}F · peak ${fmt(s.maxD)} live F2 fibers${s.multi?` · ${s.multi} segments use parallel F2 cables`:''}`],
+    ['good',`F1 backbone ${s.P.f1Min?`≥ ${s.P.f1Min}F on main roads`:'sized to need'}`,`Largest F1 ${s.f1Max}F · peak ${fmt(s.maxF)} live feeder fibers incl. MDU reserve`],
+    ['good','DA boundaries do not overlap','Every location belongs to one DA and one MST area'],
+    [s.P.poleMode==='data'?'good':'warn','Aerial only on usable poles',s.airFt?`${fmt(s.airFt)} ft aerial on ~${fmt(s.poles)} poles, ${fmt(s.ugFt)} ft underground${s.P.poleMode==='data'?'':' · what-if, poles not confirmed'}`:'No confirmed poles: all underground. Mark streets or import poles from the utility'],
+    ['good',`Lot design: ${D.rearMode?'rear lot':'front lot'}`,D.rearMode?`${fmt(s.rearFt)} ft of cable in rear easements (${s.P.rearAir?'aerial on rear-lot poles':'underground'}); drops run about ${D.rearDist} ft to the back of each home`:'Cable along the street; drops run to the front of each home'],
+    s.chain?['good','F1 daisy-chained through the DAs',`OLT → ${s.chainOrder.map(d=>d.id).join(' → ')}; ${fmt(s.kindFt.f)} ft of F1`]:['warn','F1 daisy-chained through the DAs','Home run selected: each splitter site has its own feeder path'],
+    [s.perPass<=s.P.target?'good':'crit',`Cost per home passed ≤ ${money(s.P.target)}`,`${money(s.perPass)} · ${s.perPass<=s.P.target?`${money(s.P.target-s.perPass)} under target`:`${money(s.perPass-s.P.target)} over target`}`],
+    [s.perConn<=s.P.target?'good':'warn',`Cost per home connected ≤ ${money(s.P.target)}`,s.perConn<=s.P.target?`${money(s.perConn)} · ${money(s.P.target-s.perConn)} under target`:`${money(s.perConn)} · ${money(s.perConn-s.P.target)} over; drops and ONTs add ${money(s.connCost/s.N)} per home`]];
+  $('#drc').innerHTML=drc.map(([st,k,n])=>`<li><span>${k}</span><span class="pill p-${st}">${st==='good'?'Pass':st==='warn'?'Check':'Fail'}</span><span class="note">${n}</span></li>`).join('');
+  hist();
+  const rows=it=>`<tr><td>${esc(it.item)}</td><td class="n">${fmt(it.qty)}</td><td>${it.unit}</td><td class="n">${money(it.uc)}</td><td class="n">${money(it.ext)}</td></tr>`;
+  const sec=(t,gk)=>`<tr><td colspan="5" class="eyebrow" style="padding-top:12px">${t}</td></tr>`+s.items.filter(i=>i.g===gk).map(rows).join('');
+  const sub=(t,v)=>`<tr><td colspan="4"><b>${t}</b></td><td class="n"><b>${money(v)}</b></td></tr>`;
+  $('#bom tbody').innerHTML=sec('Outside plant to the curb','pass')+sec('Rock and permits','permit')+sec('OLT at the central office','co')+sub('Subtotal, homes passed',s.passCost)+sec('Connections','conn');
+  $('#bom tfoot').innerHTML=`<tr><td colspan="4">Total, all homes connected</td><td class="n">${money(s.passCost+s.connCost)}</td></tr>`;
+  $('#hubNote').textContent=`${s.das.length} DAs · ${fmt(s.hubs.length)} splitters in ${fmt(s.sites.length)} sites`;
+  $('#hubs tbody').innerHTML=s.das.map(d=>`<tr><td colspan="7" style="background:var(--sheet)"><b>${d.id}</b> <span class="note">· ${d.homes} homes · ${d.mst} MSTs · ${d.pon} PON ports · ${d.sites.length} site${d.sites.length>1?'s':''}</span></td></tr>`+d.hubs.map(h=>`<tr><td></td><td class="mono">${h.id}</td><td class="mono">${h.site.id}</td><td class="n">${h.terms.length}</td><td class="n">${h.homes}</td><td class="n">${fmt(h.feedFt)}</td><td class="n">${h.worst.toFixed(1)}</td></tr>`).join('')).join('');
+  const SL2=s.structs,sShow=Math.min(SL2.length,800);
+  $('#stNote').textContent=`${fmt(SL2.length)} structures · ${fmt(s.splices)} fusion splices · ${fmt(s.slackFt)} ft of slack loops`;
+  $('#sts tbody').innerHTML=SL2.slice(0,sShow).map(st=>`<tr><td class="mono">${st.id}</td><td>${typeName[st.type]}</td><td>${HH[st.hh].label}</td><td class="n">${st.total||'—'}</td><td class="note">${spliceDetail(st)}</td><td>${st.sizes.map(z=>`<span class="szc" style="background:${SIZE_COL[z]}"></span>${z}F`).join(' ')}</td></tr>`).join('');
+  const TL=s.terms.length,show=Math.min(TL,600);
+  $('#termNote').textContent=TL>show?`first ${show} of ${fmt(TL)}; export for all`:`${fmt(TL)} MSTs`;
+  $('#terms tbody').innerHTML=s.terms.slice(0,show).map(t=>`<tr><td>${t.id}</td><td>${t.hub.da.id}</td><td>${t.hub.id}</td><td><span class="sw" style="background:${TIA[t.color]}"></span>${TIA_N[t.color]}</td><td class="n">${t.homes.length} / ${s.cap}</td><td class="n">${fmt(t.maxDrop)}</td><td class="n">${fmt(t.hubFt)}</td></tr>`).join('');
+  $('#mduNote').textContent=D.mdus.length?`${D.mdus.length} complexes · ~${fmt(mu)} units`:'none in this area';
+  $('#mduNote').textContent=D.mdus.length?`${D.mdus.length} complexes · ~${fmt(mu)} units · ${s.mduFib} fibers reserved`:'none in this area';
+  $('#mdus tbody').innerHTML=D.mdus.length?s.mduHH.map(h=>{const m=h.m;return`<tr><td class="mono">${m.id}</td><td>${esc(m.ad||'no address in OSM')}</td><td class="n">${m.b}</td><td class="n">~${m.u}</td><td class="mono">${h.id}</td><td class="n">${h.fib}</td><td class="n">${fmt(h.feedFt)}</td><td class="note">${esc(m.why)}</td></tr>`}).join(''):'<tr><td colspan="8" class="note">MDU detection runs on the real-street area only.</td></tr>';
+  legend();
+}
+function hist(){
+  const s=S,b=s.budget,lim=b-MARGIN,L=s.hLoss;let lo=Infinity,hi=-Infinity;for(const v of L){lo=Math.min(lo,v);hi=Math.max(hi,v)}
+  const x0=Math.floor(Math.min(lo,lim-1)*2)/2,x1=Math.ceil(Math.max(hi,b)*2)/2+0.5,bins=Math.round((x1-x0)/0.5),cnt=new Array(bins).fill(0);
+  for(const v of L){const i=Math.min(bins-1,Math.floor((v-x0)/0.5));cnt[i]++}
+  const W=620,H=200,l=40,r=12,t=14,bt=30,ymax=Math.max(...cnt),sx=v=>l+(v-x0)/(x1-x0)*(W-l-r),sy=c=>t+(1-c/ymax)*(H-t-bt);
+  let g='';const yt=ymax<=4?ymax:4;for(let i=0;i<=yt;i++){const c=Math.round(ymax*i/yt),y=sy(c);g+=`<line x1="${l}" x2="${W-r}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${l-6}" y="${y+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="var(--f-mono)">${c}</text>`}
+  cnt.forEach((c,i)=>{if(!c)return;const xa=x0+i*.5,col=xa+.5>b?'var(--crit)':xa+.5>lim?'var(--warn)':'var(--accent)';g+=`<rect x="${sx(xa)+1}" y="${sy(c)}" width="${Math.max(1,sx(xa+.5)-sx(xa)-2)}" height="${sy(0)-sy(c)}" fill="${col}"/>`});
+  const step=(x1-x0)>12?2:1;for(let v=Math.ceil(x0);v<=x1;v+=step)g+=`<text x="${sx(v)}" y="${H-12}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="var(--f-mono)">${v}</text>`;
+  g+=`<text x="${W-r}" y="${H-1}" text-anchor="end" font-size="10" fill="var(--muted)">loss to home, dB</text>`;
+  g+=`<line x1="${sx(lim)}" x2="${sx(lim)}" y1="${t-6}" y2="${H-bt}" stroke="var(--warn)" stroke-dasharray="4 3" stroke-width="1.5"/><text x="${sx(lim)-4}" y="${t+4}" text-anchor="end" font-size="10" fill="var(--warn)">target ${lim} dB</text>`;
+  g+=`<line x1="${sx(b)}" x2="${sx(b)}" y1="${t-6}" y2="${H-bt}" stroke="var(--crit)" stroke-width="1.5"/><text x="${sx(b)+4}" y="${t+4}" font-size="10" fill="var(--crit)">budget ${b} dB</text>`;
+  $('#hist').innerHTML=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Histogram of optical loss per home">${g}</svg>`;
+  $('#lossNote').textContent=`${fmt(s.N)} homes · ${lo.toFixed(1)} to ${hi.toFixed(1)} dB`;
+}
+function renderCompare(){
+  const tb=$('#cmp tbody'),sv=$('#savings');
+  if(!CMP){tb.innerHTML=`<tr><td colspan="13" class="note">Designing every option…</td></tr>`;sv.hidden=true;return}
+  const ok=CMP.filter(c=>c.pass);const rec=(ok.length?ok:CMP).reduce((a,c)=>c.perPass<a.perPass?c:a);
+  $('#cmpNote').textContent=`Lowest cost that passes every rule: ${rec.arch.label}`;
+  if(ALT){const h=S.useH?S:ALT,f=S.useH?ALT:S,d=f.perPass-h.perPass;
+    sv.innerHTML=`<b>H backbone vs free placement (${esc(S.arch.label)}):</b> ${money(h.perPass)} vs ${money(f.perPass)} per home passed. The H layout ${d>=0?`saves ${money(d)} per home, ${money(d*S.N)} on this area`:`costs ${money(-d)} more per home on this area`}, with ${h.sites.length} splitter sites against ${f.sites.length} and ${fmt(h.structs.length)} handholes against ${fmt(f.structs.length)}. Its feeder stays on the main roads, which keeps future upgrades on one route.`;sv.hidden=false}else sv.hidden=true;
+  if(ALTC){const ch=S.chain?S:ALTC,hr=S.chain?ALTC:S,d=hr.perPass-ch.perPass,ft=r=>r.kindFt.f;
+    sv.innerHTML+=`${sv.innerHTML?'<br>':''}<b>Daisy chain vs home run:</b> ${money(ch.perPass)} vs ${money(hr.perPass)} per home passed. The daisy chain ${d>=0?`saves ${money(d)} per home, ${money(d*S.N)} on this area`:`costs ${money(-d)} more per home here`}, with ${fmt(ft(ch))} ft of F1 cable against ${fmt(ft(hr))} ft.`;sv.hidden=false}
+  if(ALTP){sv.innerHTML+=`<br><b>What-if, every street has usable poles:</b> ${money(ALTP.perPass)} per home passed, ${money(ALTP.perConn)} per home connected (${ALTP.perConn<=S.P.target?'under':'over'} the ${money(S.P.target)} target), including make-ready on ~${fmt(ALTP.poles)} poles. Confirm poles with the utility before pricing this.`;sv.hidden=false}
+  tb.innerHTML=CMP.map(c=>{const m=c.budget-c.worst,st=c.pass?'<span class="pill p-good">Pass</span>':c.dropViol?'<span class="pill p-crit">Drop limit</span>':m<0?'<span class="pill p-crit">Over budget</span>':'<span class="pill p-warn">Low margin</span>';
+    return`<tr class="${c.arch.id===archId?'cur':''}"><td><b>${c.arch.label}</b>${c===rec?' <span class="pill p-rec">Lowest cost</span>':''}</td><td class="n">${(c.N/c.pon).toFixed(1)}</td><td class="n">${c.das.length}</td><td class="n">${fmt(c.terms.length)}</td><td class="n">${fmt(c.sites.length)}</td><td class="n">${fmt(c.pon)}</td><td class="n">${fmt(c.splices)}</td><td class="n">${fmt(c.structs.length)}</td><td class="n">${m.toFixed(1)} dB</td><td class="n">${money(c.perPass)}</td><td class="n">${money(c.perConn)}</td><td>${st}</td><td>${c.arch.id===archId?'<span class="note">On map</span>':`<button data-use="${c.arch.id}">Use</button>`}</td></tr>`}).join('');
+}
+$('#cmp').addEventListener('click',e=>{const b=e.target.closest('button[data-use]');if(!b)return;archId=b.dataset.use;$('#arch').value=archId;run(false)});
+
+// ---------- map ----------
+function css(){const cs=getComputedStyle(document.documentElement),g=n=>cs.getPropertyValue(n).trim();return{sheet:g('--sheet'),grid:g('--grid'),street:g('--street'),accent:g('--accent'),feeder:g('--feeder'),drop:g('--drop'),ink:g('--ink'),muted:g('--muted'),good:g('--good'),warn:g('--warn'),crit:g('--crit'),hilite:g('--hilite'),surface:g('--surface'),splice:g('--splice'),hh:g('--hh'),da:g('--da'),mdu:g('--mdu'),mst:g('--mst'),pot:g('--pot')}}
+// ---------- basemaps: bundled public-domain aerial for the built-in area, live tiles everywhere they are allowed ----------
+const TILE_SRC={esri:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`,
+  ref:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/${z}/${y}/${x}`,
+  osm:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`};
+const TILES=new Map(),TSTAT={ok:0,fail:0};
+function tile(layer,z,x,y){const k=layer+'/'+z+'/'+x+'/'+y;let t=TILES.get(k);if(!t){if(TILES.size>600){for(const kk of [...TILES.keys()].slice(0,200))TILES.delete(kk)}
+  t=new Image();t.onload=()=>{TSTAT.ok++;req()};t.onerror=()=>{TSTAT.fail++;t.bad=true;bmNote()};t.src=TILE_SRC[layer](z,x,y);TILES.set(k,t)}return t}
+function bmNote(){const el=$('#bmNote'),bm=$('#basemap').value;if(bm==='plan'||TSTAT.ok>0||TSTAT.fail<4){el.hidden=true;return}
+  el.textContent='Live map tiles are blocked on this link. Aerial works on the self-hosted copy; switch to Plan sheet here.';el.hidden=false}
+function attribution(){const bm=$('#basemap').value,parts=[];
+  if(bm!=='plan'&&bm!=='streets')parts.push('Imagery © Esri, Maxar, Earthstar Geographics')
+  if(bm==='streets')parts.push('Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>');
+  const el=$('#attrib');el.innerHTML=parts.join(' · ');el.hidden=!parts.length}
+function drawBasemap(ctx,W,H,c){const bm=$('#basemap').value;if(bm==='plan')return false;const G=(D&&D.geo)||EMPTY_GEO;
+  const toS=(lon,lat)=>[((lon-G.lon0)*G.k)*view.s+view.tx,(-(lat-G.lat0)*FT_PER_DEG)*view.s+view.ty];
+  const toLL=(sx,sy)=>{const x=(sx-view.tx)/view.s,y=(sy-view.ty)/view.s;return[G.lon0+x/G.k,G.lat0-y/FT_PER_DEG]};
+  ctx.fillStyle=bm==='streets'?'#EEF0EC':'#2B3237';ctx.fillRect(0,0,W,H);
+  const [lonA,latA]=toLL(0,0),[lonB,latB]=toLL(W,H),mpp=0.3048/view.s,latc=(latA+latB)/2;
+  const z=Math.max(3,Math.min(19,Math.round(Math.log2(156543.03*Math.cos(latc*Math.PI/180)/mpp)))),n=2**z;
+  const tx=lon=>Math.floor((lon+180)/360*n),ty=lat=>{const r=lat*Math.PI/180;return Math.floor((1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n)};
+  const lonOf=x=>x/n*360-180,latOf=y=>{const m=Math.PI-2*Math.PI*y/n;return 180/Math.PI*Math.atan(Math.sinh(m))};
+  const x0=tx(lonA),x1=tx(lonB),y0=ty(latA),y1=ty(latB);
+  if((x1-x0+1)*(y1-y0+1)<=150)for(const layer of bm==='aerial'?['esri']:bm==='hybrid'?['esri','ref']:['osm'])
+    for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++){const t=tile(layer,z,x,y);if(t.complete&&t.naturalWidth&&!t.bad){const [ax,ay]=toS(lonOf(x),latOf(y)),[bx,by]=toS(lonOf(x+1),latOf(y+1));ctx.drawImage(t,ax,ay,bx-ax+0.6,by-ay+0.6)}}
+  if(bm!=='streets'){ctx.fillStyle='rgba(10,18,24,0.18)';ctx.fillRect(0,0,W,H)}
+  return true}
+const EMPTY_GEO={lat0:39.5,lon0:-98.35,k:Math.cos(39.5*Math.PI/180)*FT_PER_DEG};
+function startView(){const G=EMPTY_GEO,W=cv.clientWidth||800,H=cv.clientHeight||500,x0=(-125-G.lon0)*G.k,x1=(-66-G.lon0)*G.k,y0=-(50-G.lat0)*FT_PER_DEG,y1=-(24-G.lat0)*FT_PER_DEG,s=Math.min(W/(x1-x0),H/(y1-y0));view.s=s;view.tx=W/2-(x0+x1)/2*s;view.ty=H/2-(y0+y1)/2*s}
+function setResults(on){document.querySelectorAll('.wrap > section').forEach(el=>{el.hidden=!on});$('#legend').hidden=!on;$('#maptitle').hidden=!on}
+function drawEmpty(){const W=cv.clientWidth,H=cv.clientHeight,dpr=window.devicePixelRatio||1;if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+  const ctx=cv.getContext('2d'),c=css();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=c.sheet;ctx.fillRect(0,0,W,H);drawBasemap(ctx,W,H,c);
+  const bw=Math.min(420,W-32),bh=74,bx=(W-bw)/2,by=(H-bh)/2;ctx.fillStyle=c.surface;ctx.globalAlpha=.94;ctx.fillRect(bx,by,bw,bh);ctx.globalAlpha=1;ctx.strokeStyle=c.line||c.muted;ctx.strokeRect(bx+.5,by+.5,bw-1,bh-1);
+  ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=c.ink;ctx.font='700 16px Archivo, system-ui, sans-serif';ctx.fillText('Upload address points to start',W/2,by+27);
+  ctx.fillStyle=c.muted;ctx.font='12px Public Sans, system-ui, sans-serif';ctx.fillText('Shapefile, CSV, Excel, GeoJSON, KML or GPX. The map zooms to them.',W/2,by+50)}
+function fit(){if(!D)return;const b=D.fitBounds||D.bounds,W=cv.clientWidth||800,H=cv.clientHeight||500,pad2=50;const s=Math.min((W-2*pad2)/Math.max(1,b.maxX-b.minX),(H-2*pad2-30)/Math.max(1,b.maxY-b.minY));view.s=s;view.tx=W/2-(b.minX+b.maxX)/2*s;view.ty=(H-30)/2-(b.minY+b.maxY)/2*s+10}
+let raf=0;function req(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()})}
+const DA_COL=['#1C7ED6','#E8590C','#2B8A3E','#C2255C','#7048E8','#E67700','#0C8599','#A61E4D'];
+const HHPX={vault:[16,11],hh36:[11,8],hh30:[9,6]};
+function draw(){
+  if(!S){drawEmpty();return}const W=cv.clientWidth,H=cv.clientHeight,dpr=window.devicePixelRatio||1;
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr)}
+  const ctx=cv.getContext('2d'),c=css(),g=D.g,s=view.s,X=x=>x*s+view.tx,Y=y=>y*s+view.ty,on=id=>$(id).checked;
+  const poly=(pts)=>{ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.closePath()};
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=c.sheet;ctx.fillRect(0,0,W,H);
+  const hasBM=drawBasemap(ctx,W,H,c);
+  const gs=500*s;if(gs>24&&!hasBM){ctx.strokeStyle=c.grid;ctx.lineWidth=1;ctx.beginPath();const ox=((view.tx%gs)+gs)%gs,oy=((view.ty%gs)+gs)%gs;for(let x=ox;x<W;x+=gs){ctx.moveTo(Math.round(x)+.5,0);ctx.lineTo(Math.round(x)+.5,H)}for(let y=oy;y<H;y+=gs){ctx.moveTo(0,Math.round(y)+.5);ctx.lineTo(W,Math.round(y)+.5)}ctx.stroke()}
+  ctx.lineCap='round';ctx.lineJoin='round';
+  if(on('#lyStreets')&&!hasBM){const sw=Math.max(1,Math.min(16,(D.imported&&!D.real?8:26)*s));ctx.strokeStyle=c.street;ctx.lineWidth=sw;ctx.beginPath();const e=D.edges;for(let i=0;i<e.length;i+=2){if(D.rear&&D.rear.has(ek(e[i],e[i+1])))continue;ctx.moveTo(X(g.x[e[i]]),Y(g.y[e[i]]));ctx.lineTo(X(g.x[e[i+1]]),Y(g.y[e[i+1]]))}ctx.stroke();
+    if(D.bb&&S.useH){ctx.strokeStyle=c.feeder;ctx.globalAlpha=.16;ctx.lineWidth=sw+4;ctx.beginPath();for(let i=0;i<e.length;i+=2)if(D.bb[e[i]]&&D.bb[e[i+1]]){ctx.moveTo(X(g.x[e[i]]),Y(g.y[e[i]]));ctx.lineTo(X(g.x[e[i+1]]),Y(g.y[e[i+1]]))}ctx.stroke();ctx.globalAlpha=1}}
+  const R2=S.ras,segs=arr=>{ctx.beginPath();for(let i=0;i<arr.length;i+=4){ctx.moveTo(X(arr[i]),Y(arr[i+1]));ctx.lineTo(X(arr[i+2]),Y(arr[i+3]))}},cs2=R2.CELL*s+0.6;
+  if(on('#lyMst')){ctx.globalAlpha=.08;ctx.fillStyle=c.mst;ctx.beginPath();for(const r of R2.runs)ctx.rect(X(r[0]),Y(r[1]),r[2]*s+0.6,cs2);ctx.fill();
+    ctx.globalAlpha=.85;ctx.strokeStyle=c.mst;ctx.lineWidth=1.3;ctx.lineCap='butt';segs(R2.mstSeg);ctx.stroke();ctx.globalAlpha=1}
+  // streets with usable poles, the transmission line (not usable) and imported poles
+  if(on('#lyStreets')){const e=D.edges;ctx.strokeStyle=c.ink;ctx.globalAlpha=.35;ctx.lineWidth=2;ctx.setLineDash([6,4]);ctx.beginPath();for(let i=0;i<e.length;i+=2)if(S.isAir(e[i],e[i+1])){ctx.moveTo(X(g.x[e[i]]),Y(g.y[e[i]]));ctx.lineTo(X(g.x[e[i+1]]),Y(g.y[e[i+1]]))}ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
+  if(D.rear&&on('#lyStreets')){const e=D.edges;ctx.strokeStyle=hasBM?'#F2E8C9':c.muted;ctx.globalAlpha=.9;ctx.lineWidth=1.6;ctx.setLineDash([7,4]);ctx.beginPath();for(let i=0;i<e.length;i+=2)if(D.rear.has(ek(e[i],e[i+1]))){ctx.moveTo(X(g.x[e[i]]),Y(g.y[e[i]]));ctx.lineTo(X(g.x[e[i+1]]),Y(g.y[e[i+1]]))}ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
+  if(D.boundary){ctx.strokeStyle=c.ink;ctx.lineWidth=2.5;ctx.setLineDash([14,6]);for(const ring of D.boundary){ctx.beginPath();ring.forEach((p,i)=>i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.closePath();ctx.stroke()}ctx.setLineDash([])}
+  if(D.trans&&!D.boundary){ctx.strokeStyle=c.muted;ctx.lineWidth=2;ctx.setLineDash([2,4]);ctx.beginPath();D.trans.forEach((p,i)=>i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.stroke();ctx.setLineDash([])}
+  if(D.poles){const r=Math.max(2.5,Math.min(5,12*s));ctx.lineWidth=1.5;ctx.strokeStyle='#FFFFFF';ctx.fillStyle='#111111';for(const p of D.poles){ctx.beginPath();ctx.arc(X(p[0]),Y(p[1]),r,0,7);ctx.fill();ctx.stroke()}}
+  if(on('#lyDa')){const dk=new Map(S.das.map((d,k)=>[d,k]));ctx.globalAlpha=.14;
+    S.das.forEach((d,k)=>{ctx.fillStyle=DA_COL[k%DA_COL.length];ctx.beginPath();for(const r of R2.runs)if(S.terms[r[3]].hub.da===d)ctx.rect(X(r[0]),Y(r[1]),r[2]*s+0.6,cs2);ctx.fill()});ctx.globalAlpha=1;
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#FFFFFF';ctx.lineWidth=8;segs(R2.daSeg);ctx.stroke();ctx.strokeStyle='#0B3D91';ctx.lineWidth=4;segs(R2.daSeg);ctx.stroke()}
+  ctx.lineCap='round';
+  if(on('#lyMdu'))for(const m of D.mdus){for(const pl of m.polys){poly(pl);ctx.fillStyle=c.mdu;ctx.globalAlpha=.22;ctx.fill();ctx.globalAlpha=1;ctx.strokeStyle=c.mdu;ctx.lineWidth=1.5;ctx.stroke()}
+    const x=X(m.x),y=Y(m.y);ctx.strokeStyle=c.mdu;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-6,y-6);ctx.lineTo(x+6,y+6);ctx.moveTo(x+6,y-6);ctx.lineTo(x-6,y+6);ctx.stroke()}
+  if(on('#lyDrops')&&s>0.08){ctx.strokeStyle=c.drop;ctx.lineWidth=1.4;ctx.setLineDash([4,2]);ctx.beginPath();for(let h=0;h<S.N;h++){const p=S.hDropPath[h],hm=D.homes[h];ctx.moveTo(X(hm.x),Y(hm.y));const pi=S.hPot[h];if(pi>=0)ctx.lineTo(X(S.pots[pi].x),Y(S.pots[pi].y));for(const n of p)ctx.lineTo(X(g.x[n]),Y(g.y[n]))}ctx.stroke();ctx.setLineDash([])}
+  if(on('#lyCable')){const es=[...S.E.values()].sort((a,b)=>a.size-b.size),wz=z=>2+Math.log2(z/12)*0.9;ctx.lineCap='butt';
+    const line=(e,off,w,col)=>{const ax=X(g.x[e.a]),ay=Y(g.y[e.a]),bx=X(g.x[e.b]),by=Y(g.y[e.b]),L=Math.hypot(bx-ax,by-ay)||1,nx=-(by-ay)/L*off,ny=(bx-ax)/L*off;ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(e.air?[10,5]:[]);ctx.beginPath();ctx.moveTo(ax+nx,ay+ny);ctx.lineTo(bx+nx,by+ny);ctx.stroke()};
+    const offs=e=>{const ws=e.cables.map((z,k)=>wz(z)+(e.kinds[k]==='f'?3:0)),tot=ws.reduce((a,b)=>a+b,0)+(ws.length-1)*1.5;let acc=-tot/2;return ws.map(w=>{const o=acc+w/2;acc+=w+1.5;return o})};
+    for(const e of es){const o=offs(e);e.cables.forEach((z,k)=>{if(e.kinds[k]==='f')line(e,o[k],wz(z)+3,c.ink)})}
+    for(const e of es){const o=offs(e);e.cables.forEach((z,k)=>line(e,o[k],wz(z),SIZE_COL[z]))}ctx.lineCap='round';ctx.setLineDash([])}
+  const act=hover||pinned;
+  if(act){let pts=[];const P2=n=>[g.x[n],g.y[n]];
+    if(act.type==='home'){const t=S.terms[S.hTerm[act.i]];pts=[...t.hub.path].reverse().concat([...t.path].reverse()).concat([...S.hDropPath[act.i]].reverse()).map(P2);pts.push([D.homes[act.i].x,D.homes[act.i].y])}
+    else if(act.type==='term'){const t=S.terms[act.i];pts=[...t.hub.path].reverse().concat([...t.path].reverse()).map(P2)}
+    else if(act.type==='site'){pts=[...S.sites[act.i].hubs[0].path].reverse().map(P2)}
+    if(pts.length){ctx.strokeStyle=c.hilite;ctx.lineWidth=3.5;ctx.globalAlpha=.85;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(X(p[0]),Y(p[1])):ctx.moveTo(X(p[0]),Y(p[1])));ctx.stroke();ctx.globalAlpha=1}
+    if(act.type==='term'){ctx.fillStyle=c.hilite;ctx.globalAlpha=.2;ctx.beginPath();for(const r of S.ras.runs)if(r[3]===act.i)ctx.rect(X(r[0]),Y(r[1]),r[2]*s+0.6,S.ras.CELL*s+0.6);ctx.fill();ctx.globalAlpha=1}
+    if(act.type==='site'){const set=S.sites[act.i].hubs.flatMap(h=>h.terms.flatMap(t=>t.homes));ctx.strokeStyle=c.hilite;ctx.lineWidth=2;for(const h of set){ctx.beginPath();ctx.arc(X(D.homes[h].x),Y(D.homes[h].y),Math.max(4,Math.min(9,22*s)),0,7);ctx.stroke()}}}
+  const byLoss=$('#colorBy').value==='loss';
+  if(on('#lyHomes')){const r=Math.max(1.8,Math.min(5.5,14*s));ctx.lineWidth=r>3?1:0.6;ctx.strokeStyle=c.ink;
+    for(let h=0;h<S.N;h++){const hm=D.homes[h];let col;if(byLoss){const m=S.budget-S.hLoss[h];col=m>=6?c.good:m>=MARGIN?c.warn:c.crit}else col=TIA[S.terms[S.hTerm[h]].color];
+      ctx.fillStyle=col;ctx.beginPath();ctx.arc(X(hm.x),Y(hm.y),r,0,7);ctx.fill();if(r>2.5)ctx.stroke()}}
+  if(on('#lyPot')){const r=Math.max(3,Math.min(6.5,15*s));ctx.lineWidth=2;ctx.strokeStyle=c.pot;ctx.fillStyle=c.surface;
+    for(const p of S.pots){const x=X(p.x),y=Y(p.y);ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.stroke();if(r>4){ctx.fillStyle=c.pot;ctx.beginPath();ctx.arc(x,y,r*0.38,0,7);ctx.fill();ctx.fillStyle=c.surface}}}
+  const zf=Math.max(0.6,Math.min(1.25,s*3));
+  if(on('#lyHH'))for(const st of S.structs){if(st.type==='site')continue;
+    if(st.air){const x=X(g.x[st.node]),y=Y(g.y[st.node]);ctx.fillStyle=c.surface;ctx.strokeStyle=c.ink;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,4.5*zf,0,7);ctx.fill();ctx.stroke();continue}const [w,h]=HHPX[st.hh],x=X(g.x[st.node]),y=Y(g.y[st.node]),ww=w*zf,hh2=h*zf;
+    ctx.fillStyle=st.hh==='hh36'?c.hh:c.surface;ctx.strokeStyle=c.hh;ctx.lineWidth=1.5;ctx.fillRect(x-ww/2,y-hh2/2,ww,hh2);ctx.strokeRect(x-ww/2,y-hh2/2,ww,hh2)}
+  if(on('#lyTerms')){const q=Math.max(4,Math.min(9,24*s));ctx.lineWidth=1.5;ctx.strokeStyle=c.ink;
+    for(const t of S.terms){ctx.fillStyle=TIA[t.color];const x=X(g.x[t.node]),y=Y(g.y[t.node]);ctx.beginPath();ctx.moveTo(x,y-q/1.6);ctx.lineTo(x+q/1.8,y+q/2.4);ctx.lineTo(x-q/1.8,y+q/2.4);ctx.closePath();ctx.fill();ctx.stroke()}}
+  if(on('#lySplice')){const r=Math.max(3,Math.min(5,10*s));ctx.fillStyle=c.splice;ctx.strokeStyle=c.surface;ctx.lineWidth=1.2;
+    for(const st of S.structs){if(!st.total||st.type==='site')continue;const x=X(g.x[st.node])+7*zf,y=Y(g.y[st.node])-6*zf;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.stroke()}}
+  const drawn=new Set();
+  for(const st of S.sites){if(drawn.has(st.node))continue;drawn.add(st.node);const x=X(g.x[st.node]),y=Y(g.y[st.node]),q=Math.max(8,Math.min(15,40*s));
+    if(on('#lyHH')&&!(st.struct&&st.struct.air)){ctx.fillStyle=c.ink;ctx.fillRect(x-q*1.15,y-q*0.8,q*2.3,q*1.6)}
+    ctx.lineWidth=1.5;ctx.strokeStyle=c.surface;ctx.fillStyle=c.feeder;ctx.beginPath();ctx.moveTo(x,y-q*0.75);ctx.lineTo(x+q*0.75,y);ctx.lineTo(x,y+q*0.75);ctx.lineTo(x-q*0.75,y);ctx.closePath();ctx.fill();ctx.stroke();
+    if(on('#lySplice')){ctx.fillStyle=c.splice;ctx.beginPath();ctx.arc(x+q*1.15,y-q*0.8,5,0,7);ctx.fill();ctx.strokeStyle=c.surface;ctx.stroke()}}
+  if(on('#lyMdu'))for(const h of S.mduHH){const x=X(g.x[h.node]),y=Y(g.y[h.node]),q=Math.max(8,Math.min(13,34*s));
+    ctx.strokeStyle=c.mdu;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(X(h.m.x),Y(h.m.y));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=c.mdu;ctx.strokeStyle=c.surface;ctx.lineWidth=2;ctx.beginPath();for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3;k?ctx.lineTo(x+q*Math.cos(a),y+q*Math.sin(a)):ctx.moveTo(x+q*Math.cos(a),y+q*Math.sin(a))}ctx.closePath();ctx.fill();ctx.stroke();
+    ctx.fillStyle=c.surface;ctx.font='700 '+Math.round(q*0.9)+'px JetBrains Mono, ui-monospace, monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('M',x,y+0.5)}
+  {const x=X(g.x[D.co]),y=Y(g.y[D.co]);ctx.fillStyle=c.ink;ctx.beginPath();ctx.moveTo(x-16,y+12);ctx.lineTo(x-16,y-5);ctx.lineTo(x,y-17);ctx.lineTo(x+16,y-5);ctx.lineTo(x+16,y+12);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=c.feeder;ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=c.surface;ctx.font='700 9px JetBrains Mono, ui-monospace, monospace';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('OLT',x,y+3)}
+  if(on('#lyLabels')){ctx.textAlign='left';ctx.textBaseline='middle';ctx.font='500 11px JetBrains Mono, ui-monospace, monospace';
+    const lab=(txt,x,y,col,bold)=>{ctx.font=(bold?'700 ':'500 ')+'11px JetBrains Mono, ui-monospace, monospace';const w=ctx.measureText(txt).width;ctx.fillStyle=c.surface;ctx.globalAlpha=.9;ctx.fillRect(x-2,y-8,w+4,15);ctx.globalAlpha=1;ctx.fillStyle=col;ctx.fillText(txt,x,y)};
+    if(D.trans&&!D.boundary){const p=D.trans[Math.floor(D.trans.length*0.75)];lab('69 kV transmission · not usable for fiber',X(p[0])+8,Y(p[1]),c.muted)}
+    {const x=X(g.x[D.co]),y=Y(g.y[D.co]);lab(`CO / OLT · ${S.oltCards} card${S.oltCards>1?'s':''} · ${S.pon} PON`,x+20,y,c.ink,true)}
+    for(const st of S.sites){const q=Math.max(8,Math.min(15,40*s)),off=S.sites.filter(o=>o.node===st.node).indexOf(st);lab(`${st.id} · ${st.hubs.length}×1:${S.arch.hubSplit} · ${st.struct?st.struct.total:0}f spliced`,X(g.x[st.node])+q*1.4,Y(g.y[st.node])+q*0.9+off*15,c.ink)}
+    if(on('#lyMdu'))for(const h of S.mduHH){lab(`${h.m.id} · not designed`,X(h.m.x)+9,Y(h.m.y),c.mdu);lab(`${h.id} · ${h.fib}f reserved`,X(g.x[h.node])+15,Y(g.y[h.node])+2,c.mdu,true)}
+    if(s>0.45&&on('#lySplice'))for(const st of S.structs){if(!st.total||st.type==='site')continue;lab(`${st.total}f`,X(g.x[st.node])+12*zf,Y(g.y[st.node])-7*zf,c.splice)}
+    if(s>1.1)for(const t of S.terms)lab(t.id,X(g.x[t.node])+8,Y(g.y[t.node])+12,c.muted);
+    if(on('#lyDa'))S.das.forEach((d,k)=>{const t=`${d.id} · ${d.homes} homes${S.chain&&d.order?` · chain ${d.order}`:''}`;ctx.font='700 13px Archivo, system-ui, sans-serif';const w=ctx.measureText(t).width,x=X(d.lx)-w/2,y=Y(d.ly)-24;
+      ctx.fillStyle='#FFFFFF';ctx.fillRect(x-10,y-12,w+18,24);ctx.strokeStyle='#0B3D91';ctx.lineWidth=1.5;ctx.strokeRect(x-10,y-12,w+18,24);ctx.fillStyle=DA_COL[k%DA_COL.length];ctx.fillRect(x-10,y-12,5,24);
+      ctx.fillStyle='#0B3D91';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(t,x,y+.5);ctx.font='500 11px JetBrains Mono, ui-monospace, monospace'});}
+  const target=120/s,nice=[50,100,200,250,500,1000,2000,2500,5000,10000].find(v=>v>=target*0.6)||10000,px=nice*s;
+  ctx.strokeStyle=c.ink;ctx.lineWidth=2;ctx.beginPath();const bx=W-px-16,by=H-18;ctx.moveTo(bx,by-5);ctx.lineTo(bx,by);ctx.lineTo(bx+px,by);ctx.lineTo(bx+px,by-5);ctx.stroke();
+  ctx.fillStyle=c.ink;ctx.font='500 11px JetBrains Mono, ui-monospace, monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(nice>=5280?(nice/5280).toFixed(1)+' mi':nice+' ft',bx+px/2,by-6);
+}
+function legend(){
+  const sv=(w,st)=>`<svg width="${w}" height="14" aria-hidden="true">${st}</svg>`;
+  const sizes=Object.keys(S.sizeFt).map(Number).sort((a,b)=>a-b);
+  const cables=sizes.map(z=>`<span>${sv(24,`<line x1="2" y1="7" x2="22" y2="7" stroke="${SIZE_COL[z]}" stroke-width="${2+Math.log2(z/12)*0.9}" stroke-linecap="round"/>`)}${z}F</span>`).join('')+
+    `<span>${sv(24,'<line x1="2" y1="7" x2="22" y2="7" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/><line x1="2" y1="7" x2="22" y2="7" stroke="#7B4DB5" stroke-width="3" stroke-linecap="round"/>')}F1 feeder (dark outline) · others F2 distribution</span>`+
+    `<span>${sv(24,'<line x1="2" y1="7" x2="22" y2="7" stroke="var(--drop)" stroke-width="1" stroke-dasharray="3 3"/>')}Drop</span>`;
+  const eq=[[sv(26,'<path d="M3 13 L3 6 L13 1 L23 6 L23 13Z" fill="var(--ink)" stroke="var(--feeder)" stroke-width="1.5"/>'),'Central office / OLT'],
+    [sv(30,'<rect x="1" y="1" width="28" height="12" fill="var(--ink)"/><path d="M15 2 L20 7 L15 12 L10 7Z" fill="var(--feeder)" stroke="var(--surface)"/>'),`Primary 1:${S.arch.hubSplit} splitter in vault`],
+    [sv(16,'<path d="M8 1 L14 12 L2 12Z" fill="#1F5FBF" stroke="var(--ink)" stroke-width="1.2"/>'),S.arch.termSplit>1?`MST with 1:${S.arch.termSplit} splitter`:'Pass-through MST'],
+    [sv(16,'<rect x="1" y="3" width="13" height="9" fill="var(--hh)" stroke="var(--hh)"/>'),'Handhole 24×36'],
+    [sv(14,'<rect x="1" y="4" width="11" height="7" fill="var(--surface)" stroke="var(--hh)" stroke-width="1.5"/>'),'Handhole 17×30'],
+    [sv(14,'<circle cx="7" cy="7" r="5" fill="var(--splice)"/>'),'Splice point (label = fibers)'],
+    [sv(16,'<path d="M8 1 L14 4.5 L14 11.5 L8 15 L2 11.5 L2 4.5Z" fill="var(--mdu)" stroke="var(--surface)"/>'),'MDU entry handhole (fibers reserved)'],
+    [sv(14,'<circle cx="7" cy="7" r="5" fill="var(--surface)" stroke="var(--pot)" stroke-width="2"/><circle cx="7" cy="7" r="2" fill="var(--pot)"/>'),'Flowerpot (only where needed, up to 4 homes)'],
+    [sv(14,'<circle cx="7" cy="7" r="4.5" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"/>'),'Aerial closure or MST on pole'],
+    [sv(26,'<line x1="2" y1="7" x2="24" y2="7" stroke="#1F7FD1" stroke-width="3" stroke-dasharray="7 4"/>'),'Aerial cable (dashed)']];
+  const areas=[[sv(26,'<rect x="3" y="3" width="20" height="8" fill="#1C7ED6" fill-opacity=".18" stroke="#FFFFFF" stroke-width="4"/><rect x="3" y="3" width="20" height="8" fill="none" stroke="#0B3D91" stroke-width="2"/>'),`DA boundary (≤ ${S.P.daMax} homes)`],
+    [sv(26,'<rect x="2" y="2" width="22" height="10" fill="var(--mst)" fill-opacity=".12" stroke="var(--mst)" stroke-width="1.3"/>'),`MST area (≤ ${S.cap} homes)`],
+    [sv(26,'<line x1="2" y1="7" x2="24" y2="7" stroke="var(--ink)" stroke-opacity=".5" stroke-width="2" stroke-dasharray="6 4"/>'),'Street with usable poles (aerial)'],
+    ...(D.poles?[[sv(14,'<circle cx="7" cy="7" r="4" fill="#111111" stroke="#FFFFFF" stroke-width="1.5"/>'),'Utility pole (from your file)']]:[]),
+    ...(D.rear?[[sv(26,'<line x1="2" y1="7" x2="24" y2="7" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="7 4"/>'),'Rear-lot easement']]:[]),
+    [sv(26,'<rect x="2" y="2" width="22" height="10" fill="var(--mdu)" fill-opacity=".22" stroke="var(--mdu)" stroke-width="1.5"/>'),'MDU, not designed'],
+    [sv(26,'<line x1="2" y1="7" x2="24" y2="7" stroke="var(--feeder)" stroke-opacity=".3" stroke-width="8"/>'),'H backbone (main roads)']];
+  $('#legend').innerHTML=`<div class="grp"><b>Cable size</b>${cables}</div><div class="grp"><b>Equipment</b>${eq.map(i=>`<span>${i[0]}${i[1]}</span>`).join('')}</div><div class="grp"><b>Areas</b>${areas.map(i=>`<span>${i[0]}${i[1]}</span>`).join('')}${$('#colorBy').value==='loss'?`<span>${sv(26,'<circle cx="5" cy="7" r="4" fill="var(--good)"/><circle cx="13" cy="7" r="4" fill="var(--warn)"/><circle cx="21" cy="7" r="4" fill="var(--crit)"/>')}Home margin ≥6 / ≥3 / &lt;3 dB</span>`:''}</div>`;
+}
+function inPoly(x,y,pl){let c=false;for(let i=0,j=pl.length-1;i<pl.length;j=i++){const a=pl[i],b=pl[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+function hit(mx,my){if(!S)return null;const g=D.g,s=view.s,X=x=>x*s+view.tx,Y=y=>y*s+view.ty;let best=null,bd=Infinity;
+  const test=(type,i,x,y,r)=>{const d=Math.hypot(X(x)-mx,Y(y)-my);if(d<=r&&d<bd){bd=d;best={type,i}}};
+  test('co',0,g.x[D.co],g.y[D.co],17);if(best)return best;
+  S.sites.forEach((st,i)=>test('site',i,g.x[st.node],g.y[st.node],15));if(best)return best;
+  if($('#lyMdu').checked){S.mduHH.forEach((h,i)=>test('mhh',i,g.x[h.node],g.y[h.node],13));if(best)return best}
+  if($('#lyTerms').checked){S.terms.forEach((t,i)=>test('term',i,g.x[t.node],g.y[t.node],8));if(best)return best}
+  if($('#lyHH').checked||$('#lySplice').checked){S.structs.forEach((st,i)=>{if(st.type!=='site')test('st',i,g.x[st.node],g.y[st.node],9)});if(best)return best}
+  if($('#lyPot').checked){S.pots.forEach((p,i)=>test('pot',i,p.x,p.y,7));if(best)return best}
+  if($('#lyHomes').checked)for(let h=0;h<S.N;h++)test('home',h,D.homes[h].x,D.homes[h].y,7);if(best)return best;
+  if($('#lyMdu').checked){const wx=(mx-view.tx)/s,wy=(my-view.ty)/s;for(let i=0;i<D.mdus.length;i++)if(D.mdus[i].polys.some(pl=>inPoly(wx,wy,pl))||Math.hypot(X(D.mdus[i].x)-mx,Y(D.mdus[i].y)-my)<10)return{type:'mdu',i}}
+  if($('#lyDa').checked){const R2=S.ras,wx=(mx-view.tx)/s,wy=(my-view.ty)/s,i=Math.floor((wx-R2.x0)/R2.CELL),j=Math.floor((wy-R2.y0)/R2.CELL);if(i>=0&&j>=0&&i<R2.nx&&j<R2.ny){const t=R2.lab[j*R2.nx+i];if(t>=0)return{type:'da',i:S.terms[t].hub.da.i}}}
+  return null}
+function tipFor(a){const g=D.g;let x,y,html;const row=(k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;
+  if(a.type==='home'){const h=D.homes[a.i],t=S.terms[S.hTerm[a.i]],m=S.budget-S.hLoss[a.i];x=h.x;y=h.y;
+    html=`<h4>${esc(h.id)}</h4><dl>${row('MST',`${t.id} · port ${S.hPort[a.i]}`)}${S.hPot[a.i]>=0?row('Flowerpot',S.pots[S.hPot[a.i]].id):''}${row('Splitter',`${t.hub.id} at ${t.hub.site.id}`)}${row('DA',t.hub.da.id)}${row('Drop',fmt(S.hDrop[a.i])+' ft')}${row('Fiber path',fmt(S.hLen[a.i])+' ft')}${row('Loss',S.hLoss[a.i].toFixed(2)+' dB')}${row('Margin',`<span style="color:var(--${m>=MARGIN?'good':m>=0?'warn':'crit'})">${m.toFixed(2)} dB</span>`)}</dl>`}
+  else if(a.type==='term'){const t=S.terms[a.i];x=g.x[t.node];y=g.y[t.node];
+    html=`<h4>${t.id}</h4><div class="t">MST in 17×30 handhole</div><dl>${row('Fiber color',TIA_N[t.color])}${row('MST area',`${t.homes.length} of ${S.cap} homes`)}${row('Splitter',S.arch.termSplit>1?'1:'+S.arch.termSplit:'none')}${row('Fed from',t.hub.id)}${row('DA',t.hub.da.id)}${row('From splitter',fmt(t.hubFt)+' ft')}${row('Longest drop',fmt(t.maxDrop)+' ft')}</dl>`}
+  else if(a.type==='site'){const st=S.sites[a.i],s2=st.struct;x=g.x[st.node];y=g.y[st.node];
+    html=`<h4>${st.id}</h4><div class="t">Primary splitter site · ${HH.vault.label} · ${st.da.id}</div><dl>${row('Splitters',`${st.hubs.length} × 1:${S.arch.hubSplit}`)}${row('Splitter IDs',st.hubs.map(h=>h.id).join(', '))}${row('Homes served',st.homes)}${row('Feeder fibers in',s2.sp.feed)}${row('Outputs spliced',s2.sp.out)}${row('Total splices here',s2.total)}${row('From OLT',fmt(st.hubs[0].feedFt)+' ft')}${row('Cables',s2.sizes.map(z=>z+'F').join(', '))}</dl>`}
+  else if(a.type==='st'){const st=S.structs[a.i];x=g.x[st.node];y=g.y[st.node];
+    html=`<h4>${st.id}</h4><div class="t">${typeName[st.type]} · ${HH[st.hh].label}</div><dl>${row('Fibers spliced',st.total||'none')}${st.total?row('Detail',spliceDetail(st)):''}${row('Cables',st.sizes.map(z=>z+'F').join(', '))}${st.terms.length?row('MST',st.terms.map(t=>t.id).join(', ')):''}${row('Slack loop',(SLACK[st.type]||0)+' ft')}</dl>`}
+  else if(a.type==='mdu'){const m=D.mdus[a.i],h=S.mduHH.find(z=>z.m===m);x=m.x;y=m.y;
+    html=`<h4>${m.id}</h4><div class="t">Multi-dwelling unit · not designed</div><dl>${row('Address',esc(m.ad||'none in OSM'))}${row('Buildings',m.b)}${row('Footprint',fmt(m.m2)+' m²')}${row('Est. units','~'+m.u)}${h?row('Entry handhole',`${h.id} · ${h.fib} fibers`):''}${row('Flagged by',esc(m.why))}</dl>`}
+  else if(a.type==='pot'){const p=S.pots[a.i];x=p.x;y=p.y;
+    html=`<h4>${p.id}</h4><div class="t">Flowerpot at the property line</div><dl>${row('Homes',p.homes.map(h=>esc(D.homes[h].id)).join(', '))}${row('Fed from',p.t.id)}${row('Rock excavation',Math.round(S.P.rock*100)+'% chance')}</dl>`}
+  else if(a.type==='mhh'){const h=S.mduHH[a.i];x=g.x[h.node];y=g.y[h.node];
+    html=`<h4>${h.id}</h4><div class="t">${HH.mdu.label} for ${h.m.id}</div><dl>${row('Fibers reserved',`${h.fib} (coiled, not spliced)`)}${row('Rule','2 per 32 est. units')}${row('Est. units','~'+h.m.u)}${row('From OLT',fmt(h.feedFt)+' ft')}${row('Slack coil','100 ft')}${row('Cable here',h.sizes.map(z=>z+'F').join(', ')||'—')}${row('To building',fmt(h.m.lead)+' ft, by MDU design')}</dl>`}
+  else if(a.type==='da'){const d=S.das[a.i];x=d.lx;y=d.ly;
+    html=`<h4>${d.id}</h4><div class="t">Distribution area</div><dl>${row('Homes',`${d.homes} of ${S.P.daMax} max`)}${row('MSTs',d.mst)}${row('Primary splitters',`${d.hubs.length} × 1:${S.arch.hubSplit}`)}${row('Splitter sites',d.sites.map(s=>s.id).join(', '))}${row('PON ports',d.pon)}</dl>`}
+  else{x=g.x[D.co];y=g.y[D.co];
+    html=`<h4>Central office / OLT</h4><div class="t">Double-click the map to move it</div><dl>${row('OLT line cards',`${S.oltCards} × 16 PON`)}${row('PON ports used',S.pon)}${row('Spare PON ports',S.oltCards*16-S.pon)}${row('Feeder cable out',(S.coPorts||0)+' fibers')}${row('ODF panels',`${S.odf} × 144-port`)}${row('DAs fed',S.das.length)}</dl>`}
+  return{x,y,html}}
+function showTip(){const a=hover||pinned;if(!a){tip.hidden=true;return}const t=tipFor(a);tip.innerHTML=t.html;tip.hidden=false;
+  const sx=t.x*view.s+view.tx,sy=t.y*view.s+view.ty,W=box.clientWidth,H=box.clientHeight,tw=tip.offsetWidth,th=tip.offsetHeight;
+  let lx=sx+14,ly=sy+14;if(lx+tw>W-8)lx=sx-14-tw;if(ly+th>H-8)ly=sy-14-th;tip.style.left=Math.max(8,lx)+'px';tip.style.top=Math.max(8,ly)+'px'}
+let drag=null;
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY,tx:view.tx,ty:view.ty,moved:false};cv.style.cursor='grabbing'});
+cv.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(drag){const dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;if(drag.moved){view.tx=drag.tx+dx;view.ty=drag.ty+dy;showTip();req()}return}
+  const h=hit(mx,my);if(JSON.stringify(h)!==JSON.stringify(hover)){hover=h;showTip();req()}});
+function nearestStreet(mx,my){const g=D.g,e=D.edges,s=view.s;let b=-1,bd=10;
+  for(let i=0;i<e.length;i+=2){const ax=g.x[e[i]]*s+view.tx,ay=g.y[e[i]]*s+view.ty,bx=g.x[e[i+1]]*s+view.tx,by=g.y[e[i+1]]*s+view.ty,dx=bx-ax,dy=by-ay,L=dx*dx+dy*dy,t=L?Math.max(0,Math.min(1,((mx-ax)*dx+(my-ay)*dy)/L)):0,d=Math.hypot(ax+t*dx-mx,ay+t*dy-my);if(d<bd){bd=d;b=i}}
+  return b<0?null:[e[b],e[b+1]]}
+function markSummary(){const m=$('#markMsg');if(!D.marks||!D.marks.size){m.textContent=markMode?'Click a street to mark it as having usable poles.':'Turn on, then click a street to mark it aerial. Click again to clear.';return}
+  const names=[...D.marks].map(k=>k[0]==='w'&&D.wayNames?D.wayNames[+k.slice(1)]||'unnamed street':'street segment');m.textContent=`${D.marks.size} marked: ${[...new Set(names)].join(', ')}`}
+cv.addEventListener('pointerup',e=>{if(drag&&!drag.moved){const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+    if(markMode&&D){const st=nearestStreet(mx,my);if(st){D.marks=D.marks||new Set();const k=markKey(D,st[0],st[1]);if(D.marks.has(k))D.marks.delete(k);else D.marks.add(k);markSummary();run(false)}}
+    else{pinned=hit(mx,my);hover=null;showTip();req()}}drag=null;cv.style.cursor=markMode?'crosshair':'grab'});
+$('#markBtn').addEventListener('click',()=>{markMode=!markMode;$('#markBtn').textContent=`Mark streets with poles: ${markMode?'on':'off'}`;$('#markBtn').setAttribute('aria-pressed',markMode);cv.style.cursor=markMode?'crosshair':'grab';markSummary()});
+let POLES_LL=null;
+async function loadPoles(){const m=$('#poleMsg');m.className='msg';
+  try{const feats=await readLayer($('#upPoles'));if(!feats)return;const pts=[];let skipped=0;
+    for(const f of feats){const pr=f.properties||{};
+      if(Object.keys(pr).some(k=>/usable|attach|status|condition/i.test(k)&&/^(n|no|false|0|unusable|full|rejected?|removed?|abandoned?)$/i.test(String(pr[k]).trim()))){skipped++;continue}
+      const t=f.geometry.type,c=f.geometry.coordinates,add=q=>pts.push({lat:q[1],lon:q[0]});
+      if(t==='Point')add(c);else if(t==='MultiPoint'||t==='LineString')c.forEach(add);else if(t==='MultiLineString')c.flat().forEach(add)}
+    if(!pts.length){m.className='msg err';m.textContent='No pole points found in that file.';return}
+    POLES_LL=pts;const sk=skipped?`, ${fmt(skipped)} marked unusable were skipped`:'';
+    if(D){setPoles(D,pts);run(false);m.textContent=`${fmt(pts.length)} poles loaded${sk}. ${fmt(S.airFt)} ft of cable now runs aerial.`}
+    else m.textContent=`${fmt(pts.length)} poles loaded${sk}. They apply as soon as you upload addresses.`}
+  catch(err){m.className='msg err';m.textContent='Could not read the pole file: '+(err.message||err)}}
+$('#upPoles').addEventListener('change',loadPoles);
+$('#clearPoles').addEventListener('click',()=>{POLES_LL=null;$('#upPoles').value='';if(D){D.poles=null;D.poleGrid=null;D.marks=new Set();markSummary();run(false)}$('#poleMsg').className='msg';$('#poleMsg').textContent='Poles and marked streets cleared.'});
+cv.addEventListener('pointerleave',()=>{if(!drag&&hover){hover=null;showTip();req()}});
+function zoomAt(mx,my,f){const ns=Math.max(0.01,Math.min(40,view.s*f));view.tx=mx-(mx-view.tx)*(ns/view.s);view.ty=my-(my-view.ty)*(ns/view.s);view.s=ns;showTip();req()}
+cv.addEventListener('wheel',e=>{e.preventDefault();const r=cv.getBoundingClientRect();zoomAt(e.clientX-r.left,e.clientY-r.top,Math.exp(-e.deltaY*0.0015))},{passive:false});
+$('#zin').onclick=()=>zoomAt(cv.clientWidth/2,cv.clientHeight/2,1.5);$('#zout').onclick=()=>zoomAt(cv.clientWidth/2,cv.clientHeight/2,1/1.5);$('#zfit').onclick=()=>{if(D)fit();else startView();showTip();req()};
+cv.addEventListener('dblclick',e=>{if(!D)return;const r=cv.getBoundingClientRect(),wx=(e.clientX-r.left-view.tx)/view.s,wy=(e.clientY-r.top-view.ty)/view.s,g=D.g;
+  let b=0,bd=Infinity;for(let i=0;i<g.x.length;i++){const d=(g.x[i]-wx)**2+(g.y[i]-wy)**2;if(d<bd){bd=d;b=i}}setCO(D,b);D.coXY=[g.x[b],g.y[b]];run(false)});
+new ResizeObserver(()=>{req()}).observe(box);
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',req)}catch(e){}
+new MutationObserver(req).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+// ---------- inputs ----------
+['#maxDrop','#cableSpare','#pull','#daMax','#rock'].forEach(id=>$(id).addEventListener('input',()=>{syncOutputs();rerun()}));
+['#poleMode','#reach','#cMR','#cSpan','#chain','#target','#cRock','#cRockHH','#cPermit','#cRow','#cTcp','#cPot','#f1Min','#f2Max','#spare','#budget','#hmode','#cAerial','#cUG','#cDropFt','#cDropInst','#cPon','#cSplice'].forEach(id=>$(id).addEventListener('change',rerun));
+$('#arch').addEventListener('change',()=>{archId=$('#arch').value;run(false)});
+['#lyStreets','#lyCable','#lyDrops','#lyHomes','#lyTerms','#lyHH','#lySplice','#lyLabels','#lyMst','#lyDa','#lyMdu','#lyPot'].forEach(id=>$(id).addEventListener('change',req));
+$('#colorBy').addEventListener('change',()=>{legend();req()});
+// ---------- upload: boundary, OLT, address points, road centerlines ----------
+let CUSTOM=null,LAST=null;
+// ---- format readers: every layer becomes GeoJSON features in latitude/longitude ----
+function wktGeom(w){w=String(w).trim();const m=w.match(/^(MULTI)?(POINT|LINESTRING|POLYGON)\s*Z?M?\s*\((.*)\)$/i);if(!m)return null;
+  const multi=!!m[1],kind=m[2].toUpperCase(),body=m[3];
+  const pts=s=>s.split(',').map(p=>p.trim().replace(/[()]/g,'').split(/\s+/).slice(0,2).map(Number));
+  const groups=(s,depth)=>{const out=[];let lvl=0,start=-1;for(let i=0;i<s.length;i++){if(s[i]==='('){if(lvl===depth&&start<0)start=i+1;lvl++}else if(s[i]===')'){lvl--;if(lvl===depth&&start>=0){out.push(s.slice(start,i));start=-1}}}return out};
+  if(kind==='POINT')return multi?{type:'MultiPoint',coordinates:pts(body)}:{type:'Point',coordinates:pts(body)[0]};
+  if(kind==='LINESTRING')return multi?{type:'MultiLineString',coordinates:groups(body,0).map(pts)}:{type:'LineString',coordinates:pts(body)};
+  if(!multi)return{type:'Polygon',coordinates:groups(body,0).map(pts)};
+  return{type:'MultiPolygon',coordinates:groups(body,0).map(pg=>groups(pg,0).map(pts))}}
+function csvLayer(text){const lines=text.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return[];
+  const splitRow=l=>{const o=[];let cur='',q=false;for(const ch of l){if(ch==='"')q=!q;else if((ch===','||ch==='\t'||ch===';')&&!q){o.push(cur);cur=''}else cur+=ch}o.push(cur);return o.map(x=>x.trim())};
+  const head=splitRow(lines[0]),wi=head.findIndex(h=>/^(wkt|geom|geometry|the_geom|shape|wkt_geom)$/i.test(h));
+  if(wi>=0)return lines.slice(1).map(l=>{const r=splitRow(l),g=wktGeom(r[wi]);if(!g)return null;const p={};head.forEach((h,i)=>{if(i!==wi)p[h]=r[i]});return{type:'Feature',geometry:g,properties:p}}).filter(Boolean);
+  const pts=parseCSV(text);
+  if(!pts.length&&head.some(h=>/addr|street|address/i.test(h)))throw new Error('this list has addresses but no coordinates. Geocode it first (for example with the free U.S. Census Bureau batch geocoder) so each row has latitude and longitude');
+  return pts.map(p=>({type:'Feature',geometry:{type:'Point',coordinates:[p.lon,p.lat]},properties:Object.assign({},p.props||{},{id:p.id})}))}
+const loadScript=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('the spreadsheet reader could not load; save the sheet as CSV instead'));document.head.appendChild(s)});
+async function sheetLayer(file){if(typeof XLSX==='undefined')await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  const wb=XLSX.read(await file.arrayBuffer(),{type:'array'});let best=[];
+  for(const n of wb.SheetNames){try{const f=csvLayer(XLSX.utils.sheet_to_csv(wb.Sheets[n]));if(f.length>best.length)best=f}catch(e){if(wb.SheetNames.length===1)throw e}}
+  return best}
+function kmlLayer(text){const doc=new DOMParser().parseFromString(text,'text/xml'),feats=[];
+  const coords=el=>(el?el.textContent:'').trim().split(/\s+/).filter(Boolean).map(c=>c.split(',').slice(0,2).map(Number));
+  const geomsOf=pm=>{const gs=[];pm.querySelectorAll('Point').forEach(e=>gs.push({type:'Point',coordinates:coords(e.querySelector('coordinates'))[0]}));
+    pm.querySelectorAll('LineString').forEach(e=>gs.push({type:'LineString',coordinates:coords(e.querySelector('coordinates'))}));
+    pm.querySelectorAll('Polygon').forEach(e=>{const outer=coords(e.querySelector('outerBoundaryIs coordinates')),inner=[...e.querySelectorAll('innerBoundaryIs coordinates')].map(coords);gs.push({type:'Polygon',coordinates:[outer,...inner]})});return gs};
+  doc.querySelectorAll('Placemark').forEach(pm=>{const p={name:(pm.querySelector('name')||{}).textContent||''};pm.querySelectorAll('Data,SimpleData').forEach(d=>{p[d.getAttribute('name')]=(d.querySelector('value')||d).textContent});
+    geomsOf(pm).forEach(g=>{if(g.coordinates&&g.coordinates.length)feats.push({type:'Feature',geometry:g,properties:p})})});return feats}
+function gpxLayer(text){const doc=new DOMParser().parseFromString(text,'text/xml'),feats=[],pt=e=>[+e.getAttribute('lon'),+e.getAttribute('lat')];
+  doc.querySelectorAll('wpt').forEach(w=>feats.push({type:'Feature',geometry:{type:'Point',coordinates:pt(w)},properties:{name:(w.querySelector('name')||{}).textContent||''}}));
+  doc.querySelectorAll('trkseg,rte').forEach(s=>{const c=[...s.querySelectorAll('trkpt,rtept')].map(pt);if(c.length>1)feats.push({type:'Feature',geometry:{type:'LineString',coordinates:c},properties:{}})});return feats}
+async function readLayer(input){const files=[...(input.files||[])];if(!files.length)return null;const by=ext=>files.find(f=>f.name.toLowerCase().endsWith(ext));let feats=[];const label=files.map(f=>f.name).join(', ');
+  const needShp=()=>{if(typeof shp!=='function')throw new Error('the shapefile reader did not load; export the layer as GeoJSON or KML instead')};
+  if(by('.shp')){needShp();const prj=by('.prj')?await by('.prj').text():undefined,dbf=by('.dbf');const geoms=shp.parseShp(await by('.shp').arrayBuffer(),prj);
+    const fc=dbf?shp.combine([geoms,shp.parseDbf(await dbf.arrayBuffer(),by('.cpg')?await by('.cpg').text():undefined)]):{features:geoms.map(g=>({type:'Feature',geometry:g,properties:{}}))};feats=fc.features}
+  else for(const f of files){const n=f.name.toLowerCase();
+    if(n.endsWith('.zip')){needShp();const r=await shp(await f.arrayBuffer());feats.push(...(Array.isArray(r)?r:[r]).flatMap(fc=>fc.features||[]))}
+    else if(n.endsWith('.kmz')){if(typeof JSZip!=='function')throw new Error('the KMZ reader did not load; save the layer as KML instead');const z=await JSZip.loadAsync(await f.arrayBuffer());const k=Object.keys(z.files).find(x=>x.toLowerCase().endsWith('.kml'));if(!k)throw new Error(`${f.name} has no KML inside`);feats.push(...kmlLayer(await z.files[k].async('string')))}
+    else if(n.endsWith('.kml'))feats.push(...kmlLayer(await f.text()));
+    else if(n.endsWith('.gpx'))feats.push(...gpxLayer(await f.text()));
+    else if(/\.(csv|tsv|txt|wkt)$/.test(n))feats.push(...csvLayer(await f.text()));
+    else if(/\.(xlsx|xlsm|xls|ods)$/.test(n))feats.push(...await sheetLayer(f));
+    else if(/\.(geojson|json)$/.test(n)){const j=JSON.parse(await f.text());feats.push(...(j.type==='FeatureCollection'?j.features:j.type==='Feature'?[j]:j.coordinates?[{type:'Feature',geometry:j,properties:{}}]:[]))}
+    else if(/\.(gpkg|dxf|dwg|gdb|tab|mif)$/.test(n))throw new Error(`${f.name}: this format needs a desktop converter. In QGIS or ArcGIS, export it as a shapefile, GeoJSON or KML`);
+    else if(/\.(shx|dbf|prj|cpg)$/.test(n))throw new Error(`${f.name}: select the .shp file together with its .dbf and .prj`);
+    else throw new Error(`${f.name}: unsupported file type`)}
+  feats=feats.filter(f=>f&&f.geometry&&f.geometry.coordinates);
+  if(!feats.length)throw new Error(`no map features found in ${label}`);
+  const c0=JSON.stringify(feats[0].geometry.coordinates).match(/-?\d+(\.\d+)?/g)||[];
+  if(c0.length>=2&&(Math.abs(+c0[0])>180||Math.abs(+c0[1])>90))throw new Error(`${label} is not in latitude/longitude. Include the .prj file, or export as WGS84 (EPSG:4326)`);
+  return feats}
+const ptIn=(x,y,ring)=>{let c=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[i],b=ring[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+const pick=(p,re)=>{for(const k in p||{})if(re.test(k)&&p[k]!=null&&String(p[k]).trim())return String(p[k]).trim();return ''};
+function roadClass(p){for(const k in p||{}){if(!/^(highway|fclass|f_class|class|road_?class|rd_?class|func.*|mtfcc|type|road_?type|category)$/i.test(k))continue;const v=String(p[k]).toLowerCase();
+  if(/primary|secondary|tertiary|arterial|collector|major|trunk|s1100|s1200/.test(v))return 't';if(/service|parking|driveway|alley|private|s1400|s1710|s1740|s1780/.test(v))return 'r'}return 'r'}
+function centroidOf(geom){const pts=JSON.stringify(geom.coordinates).match(/-?\d+(\.\d+)?/g).map(Number);let x=0,y=0,n=0;for(let i=0;i+1<pts.length;i+=2){x+=pts[i];y+=pts[i+1];n++}return[x/n,y/n]}
+async function designUpload(){
+  const m=$('#upMsg'),say=(t,err)=>{m.className='msg'+(err?' err':'');m.textContent=t};
+  try{
+    const bf=$('#upBoundary').files[0],hf0=$('#upHomes').files[0];if(!bf&&!hf0)return say('Choose a boundary or an address file first.',true);
+    say('Reading files…');
+    const polys=[];let autoB=false;
+    if(bf){for(const f of await readLayer($('#upBoundary'))){const g2=f.geometry;if(g2.type==='Polygon')polys.push(g2.coordinates);else if(g2.type==='MultiPolygon')g2.coordinates.forEach(c=>polys.push(c))}
+      if(!polys.length)return say('The boundary file has no polygon in it.',true)}
+    else{const pts=(await readLayer($('#upHomes'))).map(f=>{const t=f.geometry.type;return t==='Point'?f.geometry.coordinates:t==='MultiPoint'?f.geometry.coordinates[0]:centroidOf(f.geometry)});
+      if(pts.length<3)return say('Upload a boundary, or at least 3 address points.',true);const r=hull(pts,0.0006);r.push(r[0]);polys.push([r]);autoB=true}
+    const inB=(lat,lon)=>polys.some(pg=>ptIn(lon,lat,pg[0])&&!pg.slice(1).some(h=>ptIn(lon,lat,h)));
+    let bx=[Infinity,Infinity,-Infinity,-Infinity];polys.forEach(pg=>pg[0].forEach(([x,y])=>{bx=[Math.min(bx[0],x),Math.min(bx[1],y),Math.max(bx[2],x),Math.max(bx[3],y)]}));
+    // OLT
+    let olt=null;const of=$('#upOlt').files[0];
+    if(of){const f=(await readLayer($('#upOlt'))).find(f=>/Point/.test(f.geometry.type));if(f){const c=f.geometry.type==='Point'?f.geometry.coordinates:f.geometry.coordinates[0];olt=[c[1],c[0]]}}
+    if(!olt&&$('#oltLL').value.trim()){const n=$('#oltLL').value.match(/-?\d+(\.\d+)?/g);if(n&&n.length>=2)olt=[+n[0],+n[1]];if(!olt||Math.abs(olt[0])>90||Math.abs(olt[1])>180)return say('Type the OLT as latitude, longitude, for example 30.3731, -97.7012.',true)}
+    // homes and MDUs
+    let homes=[],mdus=[],src='';const hf=$('#upHomes').files[0];
+    if(hf){const pts=[];for(const f of await readLayer($('#upHomes'))){const t=f.geometry.type,c=t==='Point'?f.geometry.coordinates:t==='MultiPoint'?f.geometry.coordinates[0]:centroidOf(f.geometry);if(!inB(c[1],c[0]))continue;
+        const p=f.properties||{},units=+pick(p,/^(units?|num_?units|unit_?count|living_?units)$/i)||1;pts.push({lat:c[1],lon:c[0],id:pick(p,/^(full_?addr(ess)?|address|addr|site_?addr|fulladd|name|id)$/i),units})}
+      if(!pts.length)return say('None of the address points fall inside the boundary.',true);
+      if(pts.length>15000)return say(`${fmt(pts.length)} addresses is above the 15,000 limit. Split the boundary into smaller areas.`,true);
+      // 3+ addresses within ~12 m, or a point with 3+ units, is an MDU: flagged and left out of this design
+      const cell=new Map(),key=p=>Math.round(p.lat/0.0001)+':'+Math.round(p.lon/0.0001);pts.forEach(p=>{const k=key(p);if(!cell.has(k))cell.set(k,[]);cell.get(k).push(p)});
+      const sq=(la,lo)=>{const d=0.00012;return[[la-d,lo-d],[la-d,lo+d],[la+d,lo+d],[la+d,lo-d]]};let mi=0;
+      for(const grp of cell.values()){const u=grp.reduce((a,p)=>a+p.units,0);
+        if(grp.length>=3||u>=3){const la=grp.reduce((a,p)=>a+p.lat,0)/grp.length,lo=grp.reduce((a,p)=>a+p.lon,0)/grp.length;mdus.push({id:'MDU-'+pad(++mi,2),b:1,m2:0,u,ad:grp[0].id||'',why:grp.length>=3?`${grp.length} addresses at one location`:`${u} units on one address`,polys:[sq(la,lo)]})}
+        else grp.forEach(p=>homes.push([p.id||'H-'+pad(homes.length+1,4),+p.lat.toFixed(6),+p.lon.toFixed(6)]))}
+      src='your address points'}
+    else return say('Add address points: a boundary alone has no homes to design.',true);
+    // streets
+    let R;const sf=$('#upStreets').files[0];
+    if(sf){const pad2=0.002,nodes=[],nk=new Map(),ways=[];
+      const nid=(lo,la)=>{const k=lo.toFixed(6)+','+la.toFixed(6);let i=nk.get(k);if(i===undefined){i=nodes.length;nodes.push([+la.toFixed(6),+lo.toFixed(6)]);nk.set(k,i)}return i};
+      for(const f of await readLayer($('#upStreets'))){const t=f.geometry.type,lines=t==='LineString'?[f.geometry.coordinates]:t==='MultiLineString'?f.geometry.coordinates:[];
+        for(const ln of lines){if(!ln.some(([x,y])=>x>=bx[0]-pad2&&x<=bx[2]+pad2&&y>=bx[1]-pad2&&y<=bx[3]+pad2))continue;ways.push({n:pick(f.properties,/^(full_?name|fullname|st_?name|street|name|road_?name|label)$/i),c:roadClass(f.properties),p:ln.map(([x,y])=>nid(x,y))})}}
+      if(!ways.length)return say('None of the road centerlines reach the boundary.',true);
+      R={name:'Uploaded area',homes,nodes,ways,mdus};src+=' and your road centerlines'}
+    say(`Designing ${fmt(homes.length)} homes…`);await new Promise(r=>setTimeout(r,20));
+    LAST={R,homes,mdus,polys,olt};
+    const wantRear=$('#lotMode').value==='rear';
+    D=buildArea(LAST,wantRear,+$('#rearDist').value||70);if(POLES_LL)setPoles(D,POLES_LL);
+    if(!R)src+=', with streets approximated (no road layer)'+(wantRear?'; rear-lot design needs a road layer, so this is a front-lot design':'');
+    setResults(true);run(true);
+    say(`Designed ${fmt(homes.length)} homes from ${src}${autoB?', inside a boundary drawn around your addresses':''}.${mdus.length?` ${mdus.length} MDU${mdus.length>1?'s':''} flagged and left out.`:''}${olt?'':' No OLT given: placed at the southwest edge. Double-click the map to move it.'}`);
+  }catch(err){say('Could not read these files: '+(err.message||err),true)}}
+$('#upRun').addEventListener('click',designUpload);
+function rebuildLots(){const rear=$('#lotMode').value==='rear';$('#rearOpts').hidden=!rear;if(!LAST||!D)return;const old=D;
+  D=buildArea(LAST,rear,Math.max(20,+$('#rearDist').value||70));D.marks=old.marks;D.poles=old.poles;D.poleGrid=old.poleGrid;
+  if(old.coXY){const b=nearestStreetNode(D,old.coXY[0],old.coXY[1]);if(b>=0){setCO(D,b);D.coXY=old.coXY}}
+  if(rear&&!LAST.R){$('#upMsg').className='msg err';$('#upMsg').textContent='Rear-lot design needs a road centerline layer so rear easements can tie into the streets. Upload one to use it.'}
+  run(false)}
+$('#lotMode').addEventListener('change',rebuildLots);$('#rearDist').addEventListener('change',rebuildLots);$('#rearPlant').addEventListener('change',rerun);
+let upT;['#upBoundary','#upHomes','#upStreets','#upOlt'].forEach(id=>$(id).addEventListener('change',()=>{if($('#upBoundary').files.length||$('#upHomes').files.length){clearTimeout(upT);upT=setTimeout(designUpload,150)}}));
+$('#basemap').addEventListener('change',()=>{attribution();bmNote();req()});
+
+// ---------- export ----------
+let DL=null;
+const tsv=rows=>rows.map(r=>r.join('\t')).join('\n');
+const csv=rows=>rows.map(r=>r.map(v=>{const t=String(v==null?'':v);return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t}).join(',')).join('\n');
+function out(data,label,file){const m=$('#exMsg'),o=$('#exOut'),isRows=Array.isArray(data),text=isRows?tsv(data):data;
+  const copy=()=>{const ok=()=>{m.textContent=`${label} copied to the clipboard.`;o.hidden=true};
+    const fail=()=>{o.value=text.length>400000?text.slice(0,400000)+'\n(truncated in this preview)':text;o.hidden=false;o.focus();o.select();m.textContent=`Select the text below and copy it (${label}).`};
+    try{navigator.clipboard.writeText(text).then(ok,fail)}catch(e){fail()}};
+  const saveLocal=()=>{const blob=new Blob([isRows?csv(data):data],{type:isRows?'text/csv':'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=file;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);m.textContent=`${label} saved as ${file}.`;o.hidden=true};
+  return saveLocal();
+  if(DL)DL.save({filename:file,data:isRows?csv(data):data}).then(()=>{m.textContent=`${label} saved as ${file}.`;o.hidden=true},err=>{if(err&&err.code==='declined')m.textContent='Save cancelled.';else copy()});else copy()}
+$('#exBom').onclick=()=>out(([['Section','Item','Qty','Unit','Unit cost','Extended']].concat(S.items.map(i=>[{pass:'Outside plant',permit:'Rock and permits',co:'OLT / central office',conn:'Connections'}[i.g],i.item,i.qty,i.unit,i.uc.toFixed(2),i.ext.toFixed(2)]))),'Bill of materials','bill-of-materials.csv');
+$('#exSt').onclick=()=>out(([['ID','Function','Structure','Fibers spliced','Feeder','Splitter outputs','Branch','Taper','MST tap','Cables','Slack ft']].concat(S.structs.map(s=>[s.id,typeName[s.type],HH[s.hh].label,s.total,s.sp.feed,s.sp.out,s.sp.branch,s.sp.taper,s.sp.tap,s.sizes.map(z=>z+'F').join(' '),SLACK[s.type]||0]))),'Splice and handhole schedule','splice-handhole-schedule.csv');
+$('#exTerm').onclick=()=>out(([['MST','DA','Splitter','Site','Fiber color','Homes','Max homes','Longest drop ft','From splitter ft']].concat(S.terms.map(t=>[t.id,t.hub.da.id,t.hub.id,t.hub.site.id,TIA_N[t.color],t.homes.length,S.cap,Math.round(t.maxDrop),Math.round(t.hubFt)]))),'MST schedule','mst-schedule.csv');
+$('#exHome').onclick=()=>out(([['Home','DA','MST','Port','Splitter','Drop ft','Fiber path ft','Loss dB','Margin dB']].concat(D.homes.map((h,i)=>{const t=S.terms[S.hTerm[i]];return[h.id,t.hub.da.id,t.id,S.hPort[i],t.hub.id,Math.round(S.hDrop[i]),Math.round(S.hLen[i]),S.hLoss[i].toFixed(2),(S.budget-S.hLoss[i]).toFixed(2)]}))),'Home assignments','home-assignments.csv');
+$('#exMdu').onclick=()=>out(([['MDU','Address','Buildings','Footprint m2','Est. units','Entry handhole','Fibers reserved','From OLT ft','Flagged by']].concat(S.mduHH.map(h=>[h.m.id,h.m.ad||'',h.m.b,h.m.m2,h.m.u,h.id,h.fib,Math.round(h.feedFt),h.m.why]))),'MDU list','mdu-list.csv');
+$('#exGeo').onclick=()=>{const G=D.geo,g=D.g,ll=(x,y)=>[+(G.lon0+x/G.k).toFixed(7),+(G.lat0-y/FT_PER_DEG).toFixed(7)],pt=n=>({type:'Point',coordinates:ll(g.x[n],g.y[n])}),pg=a=>({type:'Polygon',coordinates:[a.concat([a[0]]).map(p=>ll(p[0],p[1]))]}),F=[];
+  F.push({type:'Feature',geometry:pt(D.co),properties:{layer:'central_office_olt',olt_cards:S.oltCards,pon_ports:S.pon,odf_panels:S.odf}});
+  const RC=S.ras.CELL,mp=f=>({type:'MultiPolygon',coordinates:S.ras.runs.filter(f).map(r=>[[ll(r[0],r[1]),ll(r[0]+r[2],r[1]),ll(r[0]+r[2],r[1]+RC),ll(r[0],r[1]+RC),ll(r[0],r[1])]])});
+  S.das.forEach(d=>F.push({type:'Feature',geometry:mp(r=>S.terms[r[3]].hub.da===d),properties:{layer:'da_boundary',id:d.id,homes:d.homes,max_homes:S.P.daMax,msts:d.mst,pon_ports:d.pon}}));
+  S.terms.forEach(t=>F.push({type:'Feature',geometry:mp(r=>r[3]===t.i),properties:{layer:'mst_boundary',id:t.id,da:t.hub.da.id,homes:t.homes.length,max_homes:S.cap,fiber_color:TIA_N[t.color]}}));
+  D.mdus.forEach(m=>F.push({type:'Feature',geometry:{type:'MultiPolygon',coordinates:m.polys.map(pl=>[pl.map(p=>ll(p[0],p[1]))])},properties:{layer:'mdu_excluded',id:m.id,address:m.ad,buildings:m.b,est_units:m.u}}));
+  S.pots.forEach(p=>F.push({type:'Feature',geometry:{type:'Point',coordinates:ll(p.x,p.y)},properties:{layer:'flowerpot',id:p.id,mst:p.t.id,homes:p.homes.map(h=>D.homes[h].id).join(', ')}}));
+  S.mduHH.forEach(h=>F.push({type:'Feature',geometry:pt(h.node),properties:{layer:'mdu_entry_handhole',id:h.id,mdu:h.m.id,fibers_reserved:h.fib,structure:HH.mdu.label}}));
+  S.sites.forEach(st=>F.push({type:'Feature',geometry:pt(st.node),properties:{layer:'splitter_site',id:st.id,da:st.da.id,splitters:st.hubs.length,ratio:'1:'+S.arch.hubSplit,homes:st.homes,structure:HH.vault.label}}));
+  S.structs.filter(s=>s.type!=='site').forEach(s=>F.push({type:'Feature',geometry:pt(s.node),properties:{layer:'handhole',id:s.id,function:typeName[s.type],structure:HH[s.hh].label,fibers_spliced:s.total}}));
+  S.terms.forEach(t=>F.push({type:'Feature',geometry:pt(t.node),properties:{layer:'mst',id:t.id,splitter:t.hub.id,ports:S.arch.termPorts,used:t.homes.length,fiber_color:TIA_N[t.color]}}));
+  D.homes.forEach((h,i)=>{const t=S.terms[S.hTerm[i]];F.push({type:'Feature',geometry:{type:'Point',coordinates:ll(h.x,h.y)},properties:{layer:'home',id:h.id,mst:t.id,port:S.hPort[i],drop_ft:Math.round(S.hDrop[i]),loss_db:+S.hLoss[i].toFixed(2)}})});
+  for(const e of S.E.values())F.push({type:'Feature',geometry:{type:'LineString',coordinates:[ll(g.x[e.a],g.y[e.a]),ll(g.x[e.b],g.y[e.b])]},properties:{layer:'cable',cables:e.cables.map((z,k)=>(e.kinds[k]==='f'?'F1 ':'F2 ')+z+'F').join(' + '),count:e.cnt,feeder_fibers:e.f,distribution_fibers:e.d,length_ft:Math.round(e.len)}});
+  out(JSON.stringify({type:'FeatureCollection',name:D.name+(D.real||D.imported?'':' (sample coordinates)'),features:F}),'GeoJSON','ftth-design.json')};
+
+// ---------- start ----------
+$('#arch').value=archId;
+setResults(false);
+setTimeout(()=>{startView();draw();attribution()},0);
+})();
+</script>
+</body>
+</html>
