@@ -3,8 +3,8 @@
 Browser-based tools that automate fiber-to-the-home (FTTH) network design and track end-to-end fiber delivery. Everything runs in the browser; uploaded files never leave the user's device.
 
 **Live demos**
-- FTTH Design Studio: https://tochoby.github.io/fiber-network-tools/ftth-design-studio/
-- Delivery Command Center (sample data): https://tochoby.github.io/fiber-network-tools/delivery-command-center/
+- FTTH Design Studio: https://chiamaka-oyekwe.github.io/fiber-network-tools/ftth-design-studio/
+- Delivery Command Center (sample data): https://chiamaka-oyekwe.github.io/fiber-network-tools/delivery-command-center/
 
 ---
 
